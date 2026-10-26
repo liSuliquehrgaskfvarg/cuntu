@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>寸土必爭</title>
+<style>
+:root{
+  --bg:#1c1712; --panel:#2a221a; --panel2:#3a2f23; --line:#54442f; --text:#f3ead8; --sub:#b7a68a;
+  --gold:#f4c95d; --iron:#9fd3e6; --red:#ff6b5b; --green:#7fd16b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  overflow:hidden;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
+input{font:inherit}
+.hidden{display:none!important}
+
+/* ---------- 大廳 ---------- */
+#lobby{position:fixed;inset:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:28px 16px 40px;gap:14px;
+  background:radial-gradient(ellipse at top,#4a3a26 0%,var(--bg) 70%)}
+#logo{image-rendering:pixelated;width:132px;height:138px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+#lobby h1{margin:0;font-size:36px;letter-spacing:6px;color:var(--gold);text-shadow:0 3px 0 #6b4a1e}
+#lobby .tag{color:var(--sub);font-size:14px;margin-top:-6px}
+.card{width:100%;max-width:400px;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.card label{font-size:13px;color:var(--sub)}
+.inp{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:17px;-webkit-user-select:text;user-select:text}
+.row{display:flex;gap:8px}
+.btn{padding:12px 14px;border-radius:10px;background:var(--panel2);font-size:16px;font-weight:700;border-bottom:3px solid rgba(0,0,0,.35)}
+.btn.pri{background:#b5562c}
+.btn.ok{background:#4f8a3a}
+.btn:disabled{opacity:.4}
+.code{font-size:44px;font-weight:800;letter-spacing:10px;text-align:center;color:var(--gold)}
+.plist{display:flex;flex-direction:column;gap:6px}
+.plist div{background:var(--panel2);border-radius:8px;padding:9px 12px;display:flex;justify-content:space-between}
+.note{font-size:13px;color:var(--sub);line-height:1.55}
+.err{color:var(--red);font-size:14px;min-height:18px}
+
+/* ---------- 遊戲 ---------- */
+#game{position:fixed;inset:0;display:flex;flex-direction:column}
+#top{flex:none;background:var(--panel);border-bottom:2px solid var(--line);padding:6px 8px;display:flex;flex-direction:column;gap:5px;z-index:5;padding-top:max(6px,env(safe-area-inset-top))}
+.res{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden}
+.res small{font-size:10px;color:var(--sub);font-weight:600}
+.res .f{color:var(--gold)} .res .i{color:var(--iron)}
+.res .time{margin-left:auto;font-variant-numeric:tabular-nums;background:var(--panel2);border-radius:8px;padding:2px 8px}
+.res .time.prep{color:var(--green)}
+.res .time.hurry{color:var(--red)}
+#chips{display:flex;gap:5px}
+.chip{flex:1;min-width:0;background:var(--panel2);border-radius:7px;padding:2px 5px;font-size:11px;border-left:5px solid;line-height:1.35}
+.chip .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip b{font-size:12px}
+.chip.dead{opacity:.4}
+.chip.me{outline:2px solid #fff8}
+
+#mapWrap{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;position:relative;background:#2a2318}
+#cv{display:block;margin:6px;image-rendering:pixelated;touch-action:manipulation}
+.fab{position:absolute;right:10px;width:42px;height:42px;border-radius:50%;background:rgba(42,34,26,.9);border:2px solid var(--line);font-size:19px;z-index:4;display:flex;align-items:center;justify-content:center}
+
+#panel{flex:none;background:var(--panel);border-top:2px solid var(--line);padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));height:320px;overflow-y:auto;font-size:14px}
+#panel.mini{height:auto;min-height:0}
+#panel .tabs{display:flex;gap:5px;margin:4px 0}
+#panel .tab{flex:1;padding:9px 4px;border-radius:9px;background:var(--panel2);font-weight:800;font-size:14px;opacity:.65}
+#panel .tab.on{opacity:1;outline:2px solid var(--gold)}
+#panel .ab.wide{width:100%;margin-top:5px;padding:12px;font-size:16px}
+#panel .hd{display:flex;align-items:center;gap:6px;font-weight:800;font-size:15px;margin-bottom:4px}
+#panel .sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+#panel .gar{display:flex;gap:4px 10px;font-size:14px;margin-bottom:2px;flex-wrap:wrap;color:var(--sub)}
+#panel .gar b{color:var(--text)}
+#panel .acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+#panel .lab{font-size:12px;color:var(--sub);margin-top:6px}
+.ab{padding:8px 4px;border-radius:9px;background:var(--panel2);font-size:14px;font-weight:700;line-height:1.2;border-bottom:3px solid rgba(0,0,0,.35)}
+.ab small{display:block;font-size:11px;font-weight:600;color:var(--sub)}
+.ab.go{background:#b5562c}
+.ab.go small{color:#ffd9c2}
+.ab:disabled{opacity:.38}
+.sqs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:3px}
+.sq{position:relative;min-height:56px;padding:6px 4px;border-radius:10px;background:var(--panel2);font-size:15px;font-weight:800;line-height:1.25;border-bottom:3px solid rgba(0,0,0,.35)}
+.sq small{display:block;font-size:12px;font-weight:600;color:var(--sub)}
+.sq .ck{position:absolute;left:6px;top:4px;font-size:13px}
+.sq.on{background:#b5562c}
+.sq.on small{color:#ffd9c2}
+.sq.all{background:#3f3426;color:var(--gold)}
+.hint{color:var(--sub);line-height:1.6;font-size:14px}
+.warnline{color:var(--red);font-weight:700}
+
+#toasts{position:fixed;left:0;right:0;top:92px;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;z-index:30}
+.toast{background:rgba(20,15,10,.92);border:1px solid var(--line);color:#fff;padding:7px 13px;border-radius:9px;font-size:14px;max-width:90%;text-align:center;animation:tin .2s}
+.toast.bad{border-color:var(--red);color:#ffc9c2}
+.toast.good{border-color:var(--green);color:#d6ffc9}
+@keyframes tin{from{transform:translateY(-6px);opacity:0}}
+#pauseOv{position:fixed;left:0;right:0;bottom:calc(var(--ph,140px) + 70px);display:flex;justify-content:center;z-index:30;pointer-events:none;padding:0 16px}
+#pauseOv .pcard{pointer-events:auto;background:rgba(28,23,18,.95);border:2px solid var(--gold);border-radius:14px;padding:12px 20px;text-align:center;font-size:18px;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#pauseOv .psub{font-size:13px;color:var(--sub);margin-top:4px}
+body.paused #cv{filter:brightness(.6) saturate(.7)}
+.qks{display:flex;gap:5px;margin:4px 0}
+.qk{flex:1;padding:7px 2px;border-radius:18px;background:#3f3426;color:var(--gold);font-weight:800;font-size:14px}
+.qk.on{background:var(--gold);color:#1c1712}.qk:disabled{opacity:.4}
+.sqs.c5{grid-template-columns:repeat(5,1fr);gap:4px}.sqs.c5 .sq{min-height:44px;font-size:12px;padding:3px 1px}.sqs.c5 .sq small{font-size:10px}.sqs.c5 .sq .ck{font-size:10px;left:3px;top:2px}.sqs.c5 .sqm{width:14px;height:14px}
+#panel .acts4{grid-template-columns:repeat(4,1fr)}
+.ab{position:relative}.ab .dot{position:absolute;right:5px;top:4px;width:9px;height:9px;border-radius:50%;background:#ff3b30;border:1.5px solid #000}
+.tg{font-size:11px;padding:2px 7px;border-radius:10px;background:#3f3426;color:var(--sub);margin-right:4px;font-weight:700}.tg.on{background:#2f6b3a;color:#fff}
+.needbox{background:var(--panel2);border-radius:10px;padding:6px 9px;margin:4px 0;font-size:13px}.needbox small{color:var(--sub);font-size:12px}.gold{color:var(--gold)}
+.bar{height:8px;background:#000;border-radius:4px;overflow:hidden;margin:4px 0 2px}.bar i{display:block;height:100%}
+.srcs{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.src{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:10px;padding:5px 8px}.src.on{outline:2px solid var(--gold)}
+.src .nm{flex:1;font-weight:800;font-size:14px}.src .nm small{display:block;font-size:11px;color:var(--sub);font-weight:600}
+.mini{background:#b5562c;border-radius:8px;padding:7px 9px;font-weight:800;font-size:13px;color:#fff}.mini.g{background:#3f3426;color:var(--gold)}
+.sico{height:1.15em;width:auto;vertical-align:-0.2em;image-rendering:pixelated;margin-right:2px}
+.tcols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tcol{display:flex;flex-direction:column;gap:6px;background:var(--panel2);border-radius:10px;padding:8px}
+.tpl{width:100%;background:var(--panel);border-radius:8px;padding:9px 8px;text-align:left;font-weight:700;font-size:14px;color:var(--text)}
+.tpl.bot{opacity:.5;font-weight:600}
+.grp{flex:1;display:flex;gap:4px;padding:4px;padding-top:9px;border-radius:9px;background:rgba(0,0,0,.25);position:relative;min-width:0}
+.grp .gl{position:absolute;top:-2px;left:6px;font-size:9px;color:var(--sub)}
+.vs{align-self:center;font-weight:900;color:var(--gold);font-size:12px;flex:none}
+.lab2{font-size:12px;color:var(--sub);margin:6px 0 2px}
+#banner{position:fixed;left:0;right:0;bottom:0;background:#a34848;color:#fff;text-align:center;padding:6px;font-size:13px;z-index:40}
+.over{position:fixed;inset:0;background:rgba(10,8,5,.82);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.over .card{max-height:88vh;overflow-y:auto}
+.rank{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:8px;padding:9px 10px;font-size:15px}
+.rank .no{font-size:20px;width:30px;text-align:center}
+.rank .sc{margin-left:auto;font-weight:800}
+#help h3{margin:4px 0;color:var(--gold);font-size:16px}
+#help p,#help li{font-size:14px;line-height:1.6;margin:2px 0}
+#help ul{padding-left:20px;margin:2px 0}
+/* ---------- 第 10 版：玩法說明卡片 ---------- */
+.helpc{position:relative;max-width:420px;min-height:470px;justify-content:space-between}
+.hx{position:absolute;right:10px;top:8px;background:none;font-size:20px;color:var(--sub);padding:6px}
+#hcard{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding-top:8px;user-select:none}
+#hcard h2{margin:0;font-size:26px;color:var(--gold);letter-spacing:2px}
+#hcard .sub{color:var(--sub);font-size:15px;min-height:20px}
+.hpic{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;min-height:200px}
+.hpic img{image-rendering:pixelated}
+.hpic .ar{font-size:26px;color:var(--gold)}
+.hpic .cap{display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:800;font-size:15px}
+.hpic .tile{width:64px;height:64px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.hdots{display:flex;justify-content:center;gap:8px}
+.hdots i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.hdots i.on{background:var(--gold)}
+.htab{width:100%;border-collapse:collapse;font-size:13px;text-align:left;margin-top:6px}
+.htab td{padding:4px 6px;border-bottom:1px solid var(--line)}
+/* ---------- 第 8 版：遺蹟 buff、精兵 ---------- */
+#buffPick{z-index:60}
+.bgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+body.wide .bgrid{grid-template-columns:repeat(4,1fr)}
+body.wide #buffCard{max-width:640px}
+.bcard{padding:8px 4px!important}
+.bcard{background:var(--panel2);border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;border:2px solid transparent}
+.bcard:active{border-color:var(--gold)}
+.bcard:disabled{opacity:.4}
+.bcard b{font-size:15px}.bcard small{font-size:12px;color:var(--sub)}
+.bb{position:relative;width:52px;height:52px;border-radius:50%;background:#54442f;border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:26px}
+.bb i,.bm i{position:absolute;border-radius:50%;color:#fff;font-style:normal;display:flex;align-items:center;justify-content:center;border:1px solid #2a221a}
+.bb i{right:-5px;bottom:-5px;width:22px;height:22px;font-size:12px}
+.bm{position:relative;display:inline-flex;width:20px;height:20px;border-radius:50%;background:#54442f;border:1.5px solid var(--gold);align-items:center;justify-content:center;font-size:11px;margin-left:3px;vertical-align:middle}
+.bm i{right:-4px;bottom:-4px;width:11px;height:11px;font-size:7px}
+i.up{background:#3fa34d}i.dn{background:#2f7fd1}
+.sq .sqm{display:block;width:18px;height:18px;margin:0 auto;image-rendering:pixelated}
+.sq.el.on{background:#b5562c}
+/* ---------- 第 7 版：電腦版（寬 ≥ 900、高 ≥ 500）---------- */
+body.wide #game{display:grid;grid-template-columns:1fr 380px;grid-template-rows:auto 1fr}
+body.wide #top{grid-column:1 / -1}
+body.wide #mapWrap{grid-column:1;grid-row:2;display:flex}
+body.wide #cv{margin:auto;flex:none}
+body.wide #panel,body.wide #panel.mini{grid-column:2;grid-row:2;height:auto;border-top:0;border-left:2px solid var(--line);padding:12px 14px}
+body.wide .fab{right:394px}
+body.wide #btnZoom{bottom:12px!important}
+body.wide #btnHome{bottom:62px!important}
+body.wide #btnHelp2{bottom:112px!important}
+body.wide #btnPause{bottom:162px!important}
+body.wide #pauseOv{bottom:20px;right:380px}
+body.wide #chips{max-width:860px}
+body.wide .chip{flex:0 1 200px}
+body.wide .res{font-size:17px}
+@media (min-height:700px) and (min-width:900px){
+  body.wide #panel{font-size:16px}
+  body.wide #panel .hd{font-size:18px}
+  body.wide #panel .gar{font-size:15px}
+  body.wide .sq{min-height:64px;font-size:17px}
+  body.wide .ab{font-size:16px;padding:11px 6px}
+  body.wide #panel .tab{font-size:16px;padding:11px 4px}
+  body.wide .chip{font-size:13px}
+  body.wide .chip b{font-size:15px}
+}
+@media (max-height:520px){
+  body.wide #game{grid-template-columns:1fr 320px}
+  body.wide .fab{right:330px;width:36px;height:36px;font-size:16px}
+  body.wide #btnHome{bottom:54px!important}
+  body.wide #btnHelp2{bottom:96px!important}
+  body.wide #btnPause{bottom:138px!important}
+  body.wide #panel{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+
+<div id="lobby">
+  <canvas id="logo" width="44" height="46"></canvas>
+  <h1>寸土必爭</h1>
+  <div class="tag">四人即時領地攻防・一局 20 分鐘</div>
+  <div class="card" id="homeCard">
+    <label>你的名字</label>
+    <input class="inp" id="nameInp" maxlength="8" placeholder="最多 8 個字">
+    <button class="btn pri" id="btnCreate">開新房間</button>
+    <div class="row">
+      <input class="inp" id="codeInp" inputmode="numeric" maxlength="4" placeholder="4 位數房號" style="flex:1">
+      <button class="btn ok" id="btnJoin">加入</button>
+    </div>
+    <label>電腦難度（單人練習、開房補位都用這個）</label>
+    <select class="inp" id="diffSel"><option value="easy">簡單：5 秒想一次、不會優先打你</option><option value="normal">普通：3 秒想一次</option><option value="hard">困難：2.5 秒想一次、反應快、會圍攻</option></select>
+    <label>模式（單人練習、開房都用這個）</label>
+    <select class="inp" id="modeSel"><option value="ffa">混戰：四人各自為戰</option><option value="adj">2v2 合作：隊友相鄰（同一邊）</option><option value="diag">2v2 合作：隊友對角</option></select>
+    <button class="btn" id="btnSolo">單人練習（對 3 個機器人）</button>
+    <button class="btn hidden" id="btnResume">回到房間</button>
+    <button class="btn" id="btnHelp1">玩法說明</button>
+    <div class="err" id="homeErr"></div>
+  </div>
+  <div class="card hidden" id="waitCard">
+    <label>房號（請朋友輸入這 4 個數字）</label>
+    <div class="code" id="waitCode">----</div>
+    <div class="note" id="waitMode" style="font-weight:700"></div>
+    <div class="plist" id="waitList"></div>
+    <div class="note" id="waitNote"></div>
+    <button class="btn pri hidden" id="btnStart">開始遊戲</button>
+    <button class="btn" id="btnLeave">離開</button>
+  </div>
+</div>
+
+<div id="game" class="hidden">
+  <div id="top">
+    <div class="res">
+      <span class="f">🌾<span id="vFood">0</span><small id="vFoodR"></small></span>
+      <span class="i">⛏<span id="vIron">0</span><small id="vIronR"></small></span>
+      <span>👥<span id="vPop">0</span><small id="vCap"></small></span>
+      <span id="vRuin" style="display:flex;gap:6px;font-size:13px"></span>
+      <span class="time" id="vTime">0:00</span>
+    </div>
+    <div id="chips"></div>
+  </div>
+  <div id="mapWrap">
+    <canvas id="cv"></canvas>
+  </div>
+  <button class="fab" id="btnZoom" style="top:auto;bottom:calc(var(--ph,140px) + 12px)">🔍</button>
+  <button class="fab" id="btnHome" style="bottom:calc(var(--ph,140px) + 62px)">🏯</button>
+  <button class="fab" id="btnHelp2" style="bottom:calc(var(--ph,140px) + 112px)">？</button>
+  <button class="fab hidden" id="btnPause" style="bottom:calc(var(--ph,140px) + 162px)">⏸</button>
+  <div id="pauseOv" class="hidden"><div class="pcard"><b>⏸ 房主暫停中</b><div class="psub" id="pauseSub"></div><button class="btn" id="btnGo" style="margin-top:8px">▶ 繼續</button></div></div>
+  <div id="panel"></div>
+</div>
+
+<div id="toasts"></div>
+<div id="banner" class="hidden"></div>
+
+<div class="over hidden" id="endScr">
+  <div class="card">
+    <div class="code" id="endTitle" style="font-size:30px;letter-spacing:4px"></div>
+    <div class="note" id="endWhy" style="text-align:center"></div>
+    <div class="plist" id="endList"></div>
+    <button class="btn" id="btnStay">留下來看地圖</button>
+    <button class="btn pri" id="btnEndHome">回首頁</button>
+  </div>
+</div>
+
+<div class="over hidden" id="buffPick"><div class="card" id="buffCard"></div></div>
+
+<div class="over hidden" id="help">
+  <div class="card helpc">
+    <button class="hx" id="btnHelpClose">✕</button>
+    <div id="hcard"></div>
+    <div class="hdots" id="hdots"></div>
+    <div class="row"><button class="btn" id="hPrev" style="flex:1">←</button><button class="btn pri" id="hNext" style="flex:2">下一張 →</button></div>
+  </div>
+</div>
+
+<script>
+// ================= 遊戲規則（房主計算；也給 Node 測試用） =================
+// 第 2 版：只有一種兵、10 人一隊；每塊自己的地有哨塔；城牆保護駐軍
+var E = (function () {
+  var N = 15, STEP = 1.2, PREP = 30, GAME = 1200, HPU = 10, ATK = 0.5, DT = 0.1;
+  var SQ = 10;                 // 一隊人數
+  var SQ_HP = SQ * HPU;        // 一隊滿血
+  var TILE_SQ = 5;             // 每格最多隊數
+  var CAP_SQ = 10;             // 主城最多隊數（第 17 版）
+  var GIFT = { food: 50, iron: 30, cd: 30 };   // 第 19 版：送資源
+  var TRAIN = 10;              // 訓練秒數
+  // 第 8 版：精兵（打下野怪後的精兵營才能招）：每人血 15（×1.5）、攻擊 ×1.2
+  var E_HPU = 15, E_ATK = 1.2, TRAIN_E = 15;
+  // 第 5 版：拿掉平原；農田／礦山分 Lv1–3（產量見 LAND），這裡的 food／iron 只給主城、遺蹟用
+  var INFO = {
+    f: { n: '農田', food: 0, iron: 0 },
+    m: { n: '礦山', food: 0, iron: 0 },
+    e: { n: '精兵營', food: 0, iron: 0 },
+    r: { n: '遺蹟', food: 1, iron: 0.6 },
+    c: { n: '主城', food: 2, iron: 1 },
+    w: { n: '野地', food: 0, iron: 0 },
+    x: { n: '山', food: 0, iron: 0 }
+  };
+  var COST = {
+    rec: 80,                   // 招一隊（糧）
+    fill: 8,                   // 補一人（糧）
+    wall: [20, 50, 100],       // 城牆 Lv1–3（鐵）
+    sentry: [0, 0, 25, 50],    // 哨塔升到 Lv2、Lv3（鐵）
+    recE: { food: 160, iron: 40 },   // 招一隊精兵
+    fillE: 14,                       // 補一名精兵（糧）
+    buff: { food: 150, iron: 80 }    // 更換遺蹟 buff
+  };
+  // 第 8 版：遺蹟 buff（遺蹟在手上才有效；同一種最多疊 2 層）
+  var BUFFS = {
+    atk: { n: '攻擊力', ic: '⚔️', up: 1, d: '打人 +15%' },
+    def: { n: '防禦力', ic: '🛡️', up: 1, d: '駐軍少受傷 15%' },
+    spd: { n: '行軍速度', ic: '👟', up: 1, d: '走路快 30%' },
+    food: { n: '糧食產量', ic: '🌾', up: 1, d: '糧食 +25%' },
+    iron: { n: '鐵產量', ic: '⛏️', up: 1, d: '鐵 +40%' },
+    train: { n: '訓練時間', ic: '⏱️', up: 0, d: '訓練時間減半' },
+    tower: { n: '哨塔血量', ic: '🗼', up: 1, d: '哨塔血量 +30%' },
+    cost: { n: '招兵費用', ic: '💰', up: 0, d: '招兵、補兵 -25%' }
+  };
+  var BUFF_KEYS = Object.keys(BUFFS), BUFF_PICK_SEC = 20, BUFF_CD = 60;
+  var WALL_MUL = [1, 0.75, 0.6, 0.45];       // 駐軍受到的傷害倍率
+  // 哨塔：沒有駐軍時大約能擋下 3／6／9 人（傷害 D、血量 H 滿足 數值用模擬校正過）
+  var SENTRY = [null, { hp: 72, dps: 1.5, stop: 6 }, { hp: 144, dps: 3, stop: 13 }, { hp: 216, dps: 4.5, stop: 19 }];   // 第 17 版：血量 ×4（攻擊不變）
+  var CAP_SENTRY_MUL = 2;      // 主城哨塔血量 ×2
+  var LAND = {   // 農田／礦山各等級：產量、無主守軍（每隊人數）
+    f: [null, { food: 0.5, iron: 0 }, { food: 1.0, iron: 0 }, { food: 1.8, iron: 0 }],
+    m: [null, { food: 0, iron: 0.3 }, { food: 0, iron: 0.6 }, { food: 0, iron: 1.0 }]
+  };
+  var LAND_GUARD = [null, [5], [8, 8], [10, 10, 10]];
+  var LAND_ODDS = [0.6, 0.3, 0.1];   // 隨機生成：Lv1 6 成、Lv2 3 成、Lv3 1 成
+  var WILD_REWARD = { food: 60, iron: 30 };
+  var RUIN_WIN = 3, RUIN_HOLD = 60, RUIN_CAP = 2;   // 同時守住 3 個遺蹟 60 秒獲勝；每個遺蹟隊伍上限 +2
+  var CORNERS = [[1, 1], [1, 13], [13, 13], [13, 1]];
+  // 電腦難度：think＝幾秒下一次指令、react＝被攻打幾秒後才反應、acts＝每次最多做幾件事（沒寫＝1）、
+  // human＝打真人土地的意願倍率、gang＝別人正在打的對象，意願倍率（不聯手圍攻）
+  var DIFF = {
+    easy: { n: '簡單', think: 5, react: 6, human: 0.3, gang: 0.3 },
+    normal: { n: '普通', think: 3, react: 3, human: 1, gang: 0.4 },
+    hard: { n: '困難', think: 2.5, react: 2, acts: 1, human: 1, gang: 0.75 }
+  };   // 座位 0、2 對角
+
+  function idx(r, c) { return r * N + c; }
+  function rc(i) { return [Math.floor(i / N), i % N]; }
+  function nb4(i) {
+    var r = Math.floor(i / N), c = i % N, a = [];
+    if (r > 0) a.push(i - N); if (r < N - 1) a.push(i + N);
+    if (c > 0) a.push(i - 1); if (c < N - 1) a.push(i + 1);
+    return a;
+  }
+  function nb8(i) {
+    var r = Math.floor(i / N), c = i % N, a = [];
+    for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+      var rr = r + dr, cc = c + dc;
+      if (rr >= 0 && rr < N && cc >= 0 && cc < N) a.push(rr * N + cc);
+    }
+    return a;
+  }
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () { a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  // 隊伍：{ i: 編號, h: 血量（每人 10） }
+  function hpu(sq) { return sq.e ? E_HPU : HPU; }
+  function sqMax(sq) { return SQ * hpu(sq); }
+  function men(sq) { return Math.ceil(sq.h / hpu(sq) - 0.001); }
+  function fireOf(q) { var f = 0; for (var k = 0; k < q.length; k++) f += q[k].h / hpu(q[k]) * ATK * (q[k].e ? E_ATK : 1); return f; }
+  function powerOf(q) { var f = 0; for (var k = 0; k < q.length; k++) f += men(q[k]) * (q[k].e ? 1.8 : 1); return f; }
+  // ---------- 第 19 版：2v2 合作 ----------
+  function ally(S, a, b) { return S.mode === 'team' && a >= 0 && b >= 0 && a !== b && S.players[a].team === S.players[b].team; }
+  function friendly(S, a, b) { return a === b || ally(S, a, b); }
+  function alQ(T, o) { if (!T.al) return null; for (var k = 0; k < T.al.length; k++) if (T.al[k].o === o) return T.al[k]; return null; }   // 這格上 o 的援軍
+  function addAl(T, o, q) { if (!T.al) T.al = []; var g = alQ(T, o); if (g) g.q = g.q.concat(q); else T.al.push({ o: o, q: q }); }
+  function alSq(T) { var n = 0; if (T.al) T.al.forEach(function (g) { n += g.q.length; }); return n; }
+  function defQ(T) { var q = T.q.slice(); if (T.al) T.al.forEach(function (g) { q = q.concat(g.q); }); return q; }   // 守這格的全部兵（駐軍＋援軍）
+  function bn(S, o, k) {   // o 這個人有幾層 k buff（最多 2；第 19 版：2v2 隊友的遺蹟也算）
+    if (o < 0) return 0;
+    var n = 0; S.tiles.forEach(function (T) { if (friendly(S, T.o, o) && T.t === 'r' && T.bf === k) n++; });
+    return Math.min(2, n);
+  }
+  function fullHP(S, T, ti) { T.sh = T.sm = sentryMax(S, T, ti); }
+  function fixSentry(S) {   // buff 改變哨塔血量上限時，等比例調整目前血量
+    S.tiles.forEach(function (T, i) {
+      if (!T.sl || T.o < 0) return;
+      var cur = sentryMax(S, T, i);
+      if (!T.sm) T.sm = cur;
+      if (Math.abs(T.sm - cur) > 0.001) { T.sh = Math.min(cur, T.sh * cur / T.sm); T.sm = cur; }
+    });
+  }
+  // 第 9 版：選項＝全部 8 種，排除這個人在其他遺蹟已經拿到的 buff
+  function heldBuffs(S, o, except) { var a = []; S.tiles.forEach(function (T, i) { if (i !== except && friendly(S, T.o, o) && T.t === 'r' && T.bf) a.push(T.bf); }); return a; }
+  function buffOpts(S, o, ti) { var h = heldBuffs(S, o, ti); return BUFF_KEYS.filter(function (k) { return h.indexOf(k) < 0; }); }
+  function hpOf(q) { var s = 0; for (var k = 0; k < q.length; k++) s += q[k].h; return s; }
+  function menOf(q) { var s = 0; for (var k = 0; k < q.length; k++) s += men(q[k]); return s; }
+  function units(q) { return hpOf(q) / HPU; }
+  function sentryMax(S, T, ti) { return T.sl ? SENTRY[T.sl].hp * (isCapital(S, ti) ? CAP_SENTRY_MUL : 1) * (1 + 0.3 * bn(S, T.o, 'tower')) : 0; }
+  function isCapital(S, ti) { var T = S.tiles[ti]; return T.o >= 0 && S.players[T.o].cap === ti; }
+
+  // ---------- 地圖：產生左上 8×8，再鏡射成四份 ----------
+  function genQuad(rnd) {   // 每格是代碼：'c' 主城、'r' 遺蹟、'w' 野地、'x' 山、'f1'～'f3' 農田、'm1'～'m3' 礦山
+    var q = [], r, c;
+    for (r = 0; r < 8; r++) { q.push([]); for (c = 0; c < 8; c++) q[r].push(''); }
+    q[1][1] = 'c'; q[7][7] = 'r'; q[7][3] = 'r'; q[3][7] = 'r';
+    function home(rr, cc) { return rr <= 2 && cc <= 2; }
+    function place(t, n, lo, hi) {
+      var k = 0, guard = 0;
+      while (k < n && guard++ < 500) {
+        var rr = lo + Math.floor(rnd() * (hi - lo + 1)), cc = lo + Math.floor(rnd() * (hi - lo + 1));
+        if (!home(rr, cc) && q[rr][cc] === '') { q[rr][cc] = t; k++; }
+      }
+    }
+    place('w', 2, 3, 6); place('x', 5, 2, 7);
+    // 家裡 8 格：5 農田 3 礦山，全部 Lv1
+    var hs = [];
+    for (r = 0; r <= 2; r++) for (c = 0; c <= 2; c++) if (q[r][c] === '') hs.push([r, c]);
+    hs.sort(function () { return rnd() - 0.5; });
+    hs.forEach(function (rc0, k) { q[rc0[0]][rc0[1]] = (k < 5 ? 'f' : 'm') + '1'; });
+    // 其他空格：6 成農田、4 成礦山，等級隨機
+    for (r = 0; r < 8; r++) for (c = 0; c < 8; c++) if (q[r][c] === '') {
+      var x = rnd(), lv = x < LAND_ODDS[0] ? 1 : x < LAND_ODDS[0] + LAND_ODDS[1] ? 2 : 3;
+      q[r][c] = (rnd() < 0.6 ? 'f' : 'm') + lv;
+    }
+    return q;
+  }
+  function buildTypes(q) {
+    var t = [];
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++) t.push(q[Math.min(r, N - 1 - r)][Math.min(c, N - 1 - c)]);
+    return t;
+  }
+  function allConnected(types) {
+    var seen = {}, st = [idx(1, 1)], n = 0, tot = 0;
+    types.forEach(function (t) { if (t !== 'x') tot++; });
+    seen[st[0]] = 1;
+    while (st.length) { var i = st.pop(); n++; nb4(i).forEach(function (j) { if (!seen[j] && types[j] !== 'x') { seen[j] = 1; st.push(j); } }); }
+    return n === tot;
+  }
+  function neutralQ(S, T) {
+    function sq(m) { return { i: S.nid++, h: m * HPU }; }
+    if (T.t === 'f' || T.t === 'm') return LAND_GUARD[T.lv].map(sq);
+    if (T.t === 'w') return [sq(8), sq(8)];
+    if (T.t === 'r') return [sq(9), sq(9), sq(9), sq(9)];
+    return [];
+  }
+  function prod(T) {   // 這格每秒產量 [糧, 鐵]
+    if ((T.t === 'f' || T.t === 'm') && T.lv) { var L = LAND[T.t][T.lv]; return [L.food, L.iron]; }
+    var I = INFO[T.t]; return [I.food, I.iron];
+  }
+
+  function newGame(players, seed, diff, opts) {
+    opts = opts || {};
+    var rnd = rng(seed || 1), types;
+    for (var k = 0; k < 80; k++) { types = buildTypes(genQuad(rnd)); if (allConnected(types)) break; }
+    var list = players.slice(0, 4).map(function (p) { return { pid: p.pid, name: p.name, human: true, team: p.team }; });
+    var BOT = ['阿虎', '小黑', '鐵牛', '雲雀'];
+    for (var b = 0; list.length < 4; b++) list.push({ pid: 'bot' + b, name: '🤖' + BOT[b], human: false });
+    var team = opts.mode === 'team';
+    if (team) {   // 每隊一定 2 人：先照指定分，沒指定或超過的補到人少的那隊
+      var cnt = [0, 0];
+      list.forEach(function (p) { if ((p.team === 0 || p.team === 1) && cnt[p.team] < 2) cnt[p.team]++; else p.team = -1; });
+      list.forEach(function (p) { if (p.team === -1 || p.team === undefined) { p.team = cnt[0] <= cnt[1] ? 0 : 1; cnt[p.team]++; } });
+    }
+    var S = { v: 3, mode: team ? 'team' : 'ffa', layout: opts.layout === 'diag' ? 'diag' : 'adj', diff: DIFF[diff] ? diff : 'easy', N: N, time: 0, phase: 'prep', tiles: [], players: [], armies: [], nid: 1, ev: [], evId: 0, acks: {}, seed: seed, end: null, sec: 0 };
+    S.tiles = types.map(function (code) {
+      var T = { t: code[0], lv: code.length > 1 ? +code[1] : 0, o: -1, q: [], w: 0, sl: 0, sh: 0, k: 0, s: null, tr: null };
+      T.q = neutralQ(S, T); return T;
+    });
+    // 第 6 版：四個角落每局隨機分配（顏色跟著玩家，不跟著角落）
+    var corners = CORNERS.slice();
+    for (var z = corners.length - 1; z > 0; z--) { var j = Math.floor(rnd() * (z + 1)), tmp = corners[z]; corners[z] = corners[j]; corners[j] = tmp; }
+    if (team) {   // 第 19 版：隊友相鄰（同一邊）或對角
+      var C4 = CORNERS, pairs = S.layout === 'diag' ? [[C4[0], C4[2]], [C4[1], C4[3]]] : (rnd() < 0.5 ? [[C4[0], C4[1]], [C4[3], C4[2]]] : [[C4[0], C4[3]], [C4[1], C4[2]]]);
+      if (rnd() < 0.5) pairs.reverse();
+      pairs.forEach(function (pr) { if (rnd() < 0.5) pr.reverse(); });
+      var used = [0, 0];
+      corners = list.map(function (p) { return pairs[p.team][used[p.team]++]; });
+    }
+    list.forEach(function (p, seat) {
+      var cr = corners[seat], ci = idx(cr[0], cr[1]);
+      S.players.push({ pid: p.pid, name: p.name, human: p.human, team: team ? p.team : seat, online: true, seat: seat, cap: ci, food: 100, iron: 40, alive: true, land: 0, out: 0, score: 0 });
+      for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++) {
+        var ti = idx(cr[0] + dr, cr[1] + dc), T = S.tiles[ti];
+        T.o = seat; T.q = []; T.sl = 1;
+      }
+      var C = S.tiles[ci];
+      C.q = [{ i: S.nid++, h: SQ_HP }, { i: S.nid++, h: SQ_HP }];
+      C.sl = 3; C.w = 1;
+    });
+    S.tiles.forEach(function (T, i) { fullHP(S, T, i); });
+    refresh(S);
+    return S;
+  }
+
+  // ---------- 小工具 ----------
+  function P(S, pid) { for (var i = 0; i < S.players.length; i++) if (S.players[i].pid === pid) return S.players[i]; return null; }
+  function ev(S, type, text, to) {
+    S.ev.push({ id: ++S.evId, type: type, text: text, to: to === undefined ? -1 : to });
+    if (S.ev.length > 30) S.ev.shift();
+  }
+  function tname(S, i) { var r = rc(i), T = S.tiles[i]; return (T.lv ? 'Lv' + T.lv : '') + INFO[T.t].n + '(' + (r[1] + 1) + ',' + (r[0] + 1) + ')'; }
+  function canRecruit(S, ti, o) { var T = S.tiles[ti]; return T.o === o && (T.t === 'c' || (T.sl >= 3 && T.t !== 'e')); }   // 第 17 版：精兵營不產一般兵
+  function tileCap(S, ti) { return isCapital(S, ti) ? CAP_SQ : TILE_SQ; }   // 第 17 版：主城最多 10 隊
+  function squadsOf(S, o) {
+    var n = 0;
+    S.tiles.forEach(function (T) {
+      if (T.o === o) { n += T.q.length; if (T.tr) n += T.tr.length; }
+      var g = alQ(T, o); if (g) n += g.q.length;
+      if (T.s) T.s.forEach(function (s) { if (s.o === o) n += s.q.length; });
+    });
+    S.armies.forEach(function (a) { if (a.o === o) n += a.q.length; });
+    return n;
+  }
+  function ruinsOf(S, o) { var n = 0; S.tiles.forEach(function (T) { if (T.o === o && T.t === 'r') n++; }); return n; }
+  function squadCap(S, o) { return 2 + Math.floor(S.players[o].land / 3) + RUIN_CAP * ruinsOf(S, o); }
+  function menAll(S, o) {
+    var n = 0;
+    S.tiles.forEach(function (T) {
+      if (T.o === o) n += menOf(T.q);
+      var g = alQ(T, o); if (g) n += menOf(g.q);
+      if (T.s) T.s.forEach(function (s) { if (s.o === o) n += menOf(s.q); });
+    });
+    S.armies.forEach(function (a) { if (a.o === o) n += menOf(a.q); });
+    return n;
+  }
+
+  // 第 3 版：拿掉補給線，飛地也有產出、也能招兵（k 一律為 1，保留欄位相容）
+  function refresh(S) {
+    S.players.forEach(function (p) { p.land = 0; });
+    S.tiles.forEach(function (T) { T.k = T.o >= 0 ? 1 : 0; if (T.o >= 0) S.players[T.o].land++; });
+  }
+  function scoreOf(S, o) {
+    var s = 0;
+    S.tiles.forEach(function (T) { if (T.o === o) s += T.t === 'r' ? 4 : 1; });
+    return s;
+  }
+
+  function reach(S, o, i) {
+    var dist = {}, prev = {}, q = [i], h = 0;
+    dist[i] = 0;
+    while (h < q.length) {
+      var x = q[h++];
+      nb4(x).forEach(function (j) {
+        if (dist[j] !== undefined || !friendly(S, S.tiles[j].o, o)) return;
+        dist[j] = dist[x] + 1; prev[j] = x; q.push(j);
+      });
+    }
+    return { dist: dist, prev: prev };
+  }
+  function targets(S, o, i) {
+    var R = reach(S, o, i), out = {};
+    Object.keys(R.dist).forEach(function (k) {
+      k = +k; if (k !== i) out[k] = R.dist[k];
+      nb4(k).forEach(function (j) {
+        var T = S.tiles[j];
+        if (friendly(S, T.o, o) || T.t === 'x') return;
+        var d = R.dist[k] + 1;
+        if (out[j] === undefined || d < out[j]) out[j] = d;
+      });
+    });
+    return out;
+  }
+  function findPath(S, o, i, j) {
+    if (i === j || S.tiles[j].t === 'x') return null;
+    var R = reach(S, o, i), end = null;
+    if (friendly(S, S.tiles[j].o, o)) { if (R.dist[j] === undefined) return null; end = j; }
+    else {
+      var best = -1, bd = 1e9;
+      nb4(j).forEach(function (k) { if (R.dist[k] !== undefined && R.dist[k] < bd) { bd = R.dist[k]; best = k; } });
+      if (best < 0) return null;
+      end = best;
+    }
+    var path = [end];
+    while (path[0] !== i) path.unshift(R.prev[path[0]]);
+    if (end !== j) path.push(j);
+    return path;
+  }
+  function incoming(S, o, j) {
+    var n = 0;
+    S.armies.forEach(function (a) { if (a.o === o && a.path[a.path.length - 1] === j) n += a.q.length; });
+    return n;
+  }
+
+  // ---------- 戰鬥 ----------
+  // 傷害從第一隊開始扣，一隊打光再換下一隊
+  function hurtQ(q, d) {
+    while (d > 0 && q.length) {
+      var s = q[0];
+      if (s.h > d) { s.h -= d; d = 0; }
+      else { d -= s.h; q.shift(); }
+    }
+    for (var k = q.length - 1; k >= 0; k--) if (q[k].h < 0.05) q.splice(k, 1);
+  }
+
+  function arrive(S, ti, o, q) {
+    var T = S.tiles[ti];
+    if (T.o === o) { T.q = T.q.concat(q); return; }
+    if (ally(S, T.o, o)) { addAl(T, o, q); return; }   // 第 19 版：到隊友的地＝援軍
+    if (!T.q.length && !alSq(T) && !T.sl && !T.s) { capture(S, ti, o, q); return; }
+    if (!T.s) T.s = [];
+    var s = T.s.filter(function (x) { return x.o === o; })[0];
+    if (s) s.q = s.q.concat(q);
+    else {
+      T.s.push({ o: o, q: q, t0: S.time });
+      if (T.o >= 0) ev(S, 'atk', S.players[o].name + ' 正在攻打你的' + tname(S, ti), T.o);
+    }
+  }
+  function capture(S, ti, o, q) {
+    var T = S.tiles[ti], prev = T.o, p = S.players[o];
+    T.o = o; T.q = q; T.tr = null; T.ar = 0; T.af = 0; T.al = null;   // 援軍跟著全滅
+    if (T.s) {   // 攻下者的隊友也在打這格 → 變成援軍
+      T.s.forEach(function (x) { if (ally(S, x.o, o)) addAl(T, x.o, x.q); });
+      T.s = T.s.filter(function (x) { return x.o !== o && !ally(S, x.o, o); }); if (!T.s.length) T.s = null;
+    }
+    if (T.w > 0) T.w--;
+    T.sl = T.t === 'r' ? 3 : 1;   // 第 5 版：被打下一律變回 Lv1（遺蹟例外，一佔下就是 Lv3）
+    if (T.t === 'w') {   // 第 8 版：野地變精兵營，送一隊精兵（第 18 版：隊伍滿了也照給，可以超過上限）
+      T.t = 'e'; T.lv = 0;
+      T.q.push({ i: S.nid++, h: SQ * E_HPU, e: 1 });
+      ev(S, 'gain', '野怪投降！獲得精兵營', o);
+    }
+    if (T.t === 'r') { T.bf = null; T.bo = buffOpts(S, T.o, ti); T.bd = S.time + BUFF_PICK_SEC; T.bc = 0; }
+    var wasCap = prev >= 0 && S.players[prev].cap === ti && S.players[prev].alive;
+    fullHP(S, T, ti);   // 第 5 版：滿血
+    if (T.t === 'r') ev(S, 'info', p.name + ' 佔領了' + tname(S, ti));
+    else if (prev >= 0) ev(S, 'lost', '你的' + tname(S, ti) + ' 被 ' + p.name + ' 攻下了', prev);
+    if (wasCap) eliminate(S, prev, o);
+    refresh(S);
+  }
+  // 第 4 版：主城被攻下 → 全部土地（含哨塔、城牆）和剩下的糧鐵都歸攻下的人；駐軍解散
+  function eliminate(S, v, by) {
+    var p = S.players[v], q = S.players[by];
+    p.alive = false; p.out = S.time; p.score = scoreOf(S, v);
+    q.food += p.food; q.iron += p.iron; p.food = 0; p.iron = 0;
+    S.tiles.forEach(function (T, i) {
+      if (T.s) T.s = T.s.filter(function (x) { return x.o !== v; });
+      if (T.al) { T.al = T.al.filter(function (g) { return g.o !== v; }); if (!T.al.length) T.al = null; }
+      if (T.o === v) {
+        if (T.al) {   // 第 19 版：隊友出局 → 在他地上的援軍撤回自己的主城
+          T.al.forEach(function (g) { var hp = S.players[g.o]; if (hp.alive && S.tiles[hp.cap].o === g.o) S.tiles[hp.cap].q = S.tiles[hp.cap].q.concat(g.q); });
+          T.al = null;
+        }
+        T.o = by; T.q = []; T.tr = null; T.ar = 0; T.af = 0;
+        T.sl = T.t === 'r' ? 3 : 1; fullHP(S, T, i);   // 第 5 版：轉過來的地全部 Lv1（遺蹟 Lv3）、滿血
+        if (T.t === 'r') { T.bf = null; T.bo = buffOpts(S, by, i); T.bd = S.time + BUFF_PICK_SEC; T.bc = 0; }
+        if (T.s) {   // 本來就在打這格的攻下者部隊 → 直接進駐
+          var mine = T.s.filter(function (x) { return x.o === by; });
+          mine.forEach(function (x) { T.q = T.q.concat(x.q); });
+          T.s.forEach(function (x) { if (ally(S, x.o, by)) addAl(T, x.o, x.q); });   // 第 19 版：攻下者的隊友 → 援軍
+          T.s = T.s.filter(function (x) { return x.o !== by && !ally(S, x.o, by); });
+        }
+      }
+      if (T.s && !T.s.length) T.s = null;
+    });
+    S.armies = S.armies.filter(function (a) { return a.o !== v; });
+    p.rs = null;
+    ev(S, 'out', p.name + ' 的主城被 ' + q.name + ' 攻陷，土地全部歸 ' + q.name + '！');
+    refresh(S);
+    var alive = S.players.filter(function (x) { return x.alive; });
+    var humans = alive.filter(function (x) { return x.human; });
+    if (S.mode === 'team') {
+      var tl = [0, 0]; alive.forEach(function (x) { tl[x.team]++; });
+      if (!tl[0] || !tl[1]) { finish(S, 'team', undefined, tl[0] ? 0 : 1); return; }
+      if (!humans.length && S.players.some(function (x) { return x.human; })) finish(S, 'humans');
+      return;
+    }
+    if (alive.length <= 1) finish(S, 'last');
+    else if (!humans.length && S.players.some(function (x) { return x.human; })) finish(S, 'humans');
+  }
+
+  function finish(S, why, winner, wteam) {
+    if (S.phase === 'end') return;
+    refresh(S);
+    S.players.forEach(function (p) { if (p.alive) p.score = scoreOf(S, p.seat); });
+    if (S.mode === 'team') {   // 第 19 版：比兩人分數總和（出局的人算出局時的分數）
+      var ts = [0, 0]; S.players.forEach(function (p) { ts[p.team] += p.score; });
+      if (wteam === undefined) wteam = ts[0] === ts[1] ? (S.players.filter(function (p) { return p.team === 0 && p.alive; }).length >= S.players.filter(function (p) { return p.team === 1 && p.alive; }).length ? 0 : 1) : (ts[0] > ts[1] ? 0 : 1);
+      var ord = S.players.slice().sort(function (a, b) {
+        if ((a.team === wteam) !== (b.team === wteam)) return a.team === wteam ? -1 : 1;
+        if (a.alive !== b.alive) return a.alive ? -1 : 1;
+        return b.score - a.score;
+      }).map(function (p) { return p.seat; });
+      S.phase = 'end'; S.end = { why: why, rank: ord, wteam: wteam, ts: ts };
+      ev(S, 'end', '遊戲結束');
+      return;
+    }
+    var order = S.players.slice().sort(function (a, b) {
+      if (winner !== undefined && (a.seat === winner) !== (b.seat === winner)) return a.seat === winner ? -1 : 1;
+      if (a.alive !== b.alive) return a.alive ? -1 : 1;
+      if (a.alive) return b.score - a.score || b.land - a.land;
+      return b.out - a.out;
+    }).map(function (p) { return p.seat; });
+    S.phase = 'end'; S.end = { why: why, rank: order, winner: winner };
+    ev(S, 'end', '遊戲結束');
+  }
+
+  function siegeTick(S, ti, dt) {
+    var T = S.tiles[ti];
+    if (!T.s) return;
+    var atkTot = 0;
+    T.s.forEach(function (s) { atkTot += hpOf(s.q); });
+    // 守方火力：駐軍＋哨塔，依攻方人數比例分配
+    var defFire = fireOf(T.q) * (1 + 0.15 * bn(S, T.o, 'atk')) + (T.sl && T.sh > 0 ? SENTRY[T.sl].dps : 0);
+    if (T.al) T.al.forEach(function (g) { defFire += fireOf(g.q) * (1 + 0.15 * bn(S, g.o, 'atk')); });   // 第 19 版：援軍一起開火
+    var toDef = 0;
+    T.s.forEach(function (s) {
+      toDef += fireOf(s.q) * (1 + 0.15 * bn(S, s.o, 'atk')) * dt;
+      hurtQ(s.q, defFire * dt * (atkTot > 0 ? hpOf(s.q) / atkTot : 0));
+    });
+    // 攻方火力：先打駐軍＋援軍（城牆減傷，依血量比例分攤），全部打光才打哨塔
+    var groups = [T.q]; if (T.al) T.al.forEach(function (g) { groups.push(g.q); });
+    var gHp = 0; groups.forEach(function (q) { gHp += hpOf(q); });
+    if (gHp > 0) {
+      var wm = (WALL_MUL[T.w] || 1) * (1 - 0.15 * bn(S, T.o, 'def')), need = gHp / wm;
+      if (toDef * wm <= gHp) { var dmg = toDef * wm; groups.forEach(function (q) { hurtQ(q, dmg * hpOf(q) / gHp); }); toDef = 0; }
+      else { toDef -= need; groups.forEach(function (q) { q.length = 0; }); }
+      if (T.al) { T.al = T.al.filter(function (g) { return g.q.length; }); if (!T.al.length) T.al = null; }
+    }
+    if (!T.q.length && !alSq(T) && toDef > 0 && T.sl) T.sh = Math.max(0, T.sh - toDef);
+    T.s = T.s.filter(function (s) { return s.q.length > 0; });
+    if (!T.s.length) {
+      T.s = null;
+      if (T.sl) fullHP(S, T, ti);   // 擋下進攻 → 哨塔回滿血
+      return;
+    }
+    if (!T.q.length && !alSq(T) && (!T.sl || T.sh <= 0.01)) {
+      var big = T.s.slice().sort(function (a, b) { return hpOf(b.q) - hpOf(a.q); })[0];
+      capture(S, ti, big.o, big.q);
+    }
+  }
+  function moveArmies(S) {
+    S.armies.forEach(function (a) {
+      var k = Math.min(a.path.length - 1, Math.floor((S.time - a.t0) / (a.st || STEP) + 1e-6));
+      while (a.k < k && !a.dead) {
+        a.k++;
+        var ti = a.path[a.k], T = S.tiles[ti], last = a.k === a.path.length - 1;
+        if (friendly(S, T.o, a.o)) { if (last) { arrive(S, ti, a.o, a.q); a.dead = true; } continue; }
+        arrive(S, ti, a.o, a.q); a.dead = true;
+      }
+    });
+    S.armies = S.armies.filter(function (a) { return !a.dead && S.players[a.o].alive; });
+  }
+  function training(S) {
+    S.tiles.forEach(function (T, ti) {
+      if (!T.tr) return;
+      while (T.tr.length && T.tr[0].d <= S.time + 1e-6 && T.q.length + alSq(T) < tileCap(S, ti)) {
+        var tq = T.tr.shift(), ns = { i: S.nid++, h: SQ_HP };
+        if (tq.e) { ns.e = 1; ns.h = SQ * E_HPU; }
+        T.q.push(ns);
+        if (T.o >= 0) ev(S, 'gain', '新的一隊訓練完成', T.o);
+      }
+      if (!T.tr.length) T.tr = null;
+    });
+  }
+  function income(S) {
+    var maxLand = 0;
+    S.players.forEach(function (p) { if (p.alive) maxLand = Math.max(maxLand, p.land); });
+    S.players.forEach(function (p) { p.boost = p.alive && p.land < maxLand * 0.6; });
+    S.tiles.forEach(function (T) {
+      if (T.o < 0 || !T.k) return;
+      var p = S.players[T.o], pr = prod(T), m = p.boost ? 1.3 : 1;
+      p.food += pr[0] * m * (1 + 0.25 * bn(S, T.o, 'food')); p.iron += pr[1] * m * (1 + 0.4 * bn(S, T.o, 'iron'));
+    });
+  }
+  function rate(S, o) {
+    var f = 0, i = 0, p = S.players[o], m = p.boost ? 1.3 : 1;
+    S.tiles.forEach(function (T) { if (T.o === o && T.k) { var pr = prod(T); f += pr[0] * m; i += pr[1] * m; } });
+    f *= 1 + 0.25 * bn(S, o, 'food'); i *= 1 + 0.4 * bn(S, o, 'iron');
+    return [f, i];
+  }
+
+  function autoRun(S) {   // 每秒：自動補兵、自動招兵（維持滿編）
+    S.tiles.forEach(function (T, i) {
+      if (T.o < 0 || (!T.ar && !T.af)) return;
+      var p = S.players[T.o];
+      if (!p.alive || (!canRecruit(S, i, T.o) && T.t !== 'e')) { T.ar = 0; T.af = 0; return; }
+      if (T.af && !T.s && T.q.some(function (q) { return men(q) < SQ; })) act(S, p.pid, { t: 'fill', i: i });
+      if (T.ar && T.q.length + alSq(T) + (T.tr ? T.tr.length : 0) < tileCap(S, i)) act(S, p.pid, { t: 'rec', i: i, e: T.t === 'e' ? 1 : 0 });
+    });
+  }
+  function step(S, dt) {
+    if (S.phase === 'end') return;
+    S.time = Math.round((S.time + dt) * 1000) / 1000;
+    if (S.phase === 'prep' && S.time >= PREP) { S.phase = 'play'; ev(S, 'info', '開戰！可以出兵了'); }
+    var sec = Math.floor(S.time);
+    if (sec !== S.sec) {
+      S.sec = sec;
+      refresh(S); income(S); autoRun(S);
+      S.tiles.forEach(function (T, i) {
+        if (!T.bo || S.time < T.bd) return;
+        var h = heldBuffs(S, T.o, i), ok = T.bo.filter(function (k) { return h.indexOf(k) < 0; });
+        T.bf = ok[0] || T.bo[0]; T.bo = null;
+      });
+      fixSentry(S);
+      if (S.phase === 'play' && Math.abs(PREP + GAME - S.time - 60) < 0.5) ev(S, 'info', '剩下 1 分鐘！');
+    }
+    training(S);
+    if (S.phase === 'play') {
+      moveArmies(S);
+      for (var i = 0; i < S.tiles.length; i++) if (S.tiles[i].s) siegeTick(S, i, dt);
+      if (S.phase === 'play' && S.time >= PREP + GAME) finish(S, 'time');
+    }
+  }
+  function advance(S, el) {
+    var used = 0;
+    while (el - used >= DT - 1e-9 && used < 3) { step(S, DT); used += DT; }
+    return used;
+  }
+
+  // ---------- 玩家操作：回傳錯誤訊息或 null ----------
+  function act(S, pid, a) {
+    var p = P(S, pid);
+    if (!p) return '找不到玩家';
+    if (S.phase === 'end') return '遊戲已結束';
+    if (S.paused) return '暫停中，等房主按繼續';   // 第 15 版：房主暫停
+    if (!p.alive) return '你已經出局了';
+    var o = p.seat;
+    if (a.t === 'gift') {   // 第 19 版：送資源給隊友（50 糧／30 鐵，各自冷卻 30 秒）
+      var to = S.players[a.to];
+      if (!to || !ally(S, o, a.to)) return '只能送給隊友';
+      if (!to.alive) return '隊友已經出局了';
+      var isF = a.k === 'food', amt = isF ? GIFT.food : GIFT.iron, ck = isF ? 'gf' : 'gi';
+      if (S.time < (p[ck] || 0)) return '還要等 ' + Math.ceil(p[ck] - S.time) + ' 秒才能再送';
+      if ((isF ? p.food : p.iron) < amt) return (isF ? '糧食' : '鐵') + '不夠（要 ' + amt + '）';
+      if (isF) { p.food -= amt; to.food += amt; } else { p.iron -= amt; to.iron += amt; }
+      p[ck] = S.time + GIFT.cd;
+      ev(S, 'gift', p.name + ' 送你 ' + (isF ? '🌾' : '⛏') + amt, to.seat);
+      return null;
+    }
+    var T = S.tiles[a.i];
+    if (!T) return '格子不存在';
+    var myAl = alQ(T, o);
+    if (a.t === 'mv' && T.o !== o && myAl && ally(S, T.o, o)) {   // 第 19 版：把援軍從隊友的地帶走
+      if (S.phase !== 'play') return '準備期還不能出兵';
+      var ids0 = a.ids || [], take0 = myAl.q.filter(function (s) { return ids0.indexOf(s.i) >= 0; });
+      if (!take0.length) return '請選擇要出動的隊伍';
+      var path0 = findPath(S, o, a.i, a.j);
+      if (!path0) return '到不了那裡';
+      var D0 = S.tiles[a.j];
+      if (friendly(S, D0.o, o) && D0.q.length + alSq(D0) + (D0.tr ? D0.tr.length : 0) + incoming(S, o, a.j) + take0.length > tileCap(S, a.j)) return '目的地最多 ' + tileCap(S, a.j) + ' 隊';
+      myAl.q = myAl.q.filter(function (s) { return ids0.indexOf(s.i) < 0; });
+      if (!myAl.q.length) { T.al = T.al.filter(function (g) { return g.q.length; }); if (!T.al.length) T.al = null; }
+      S.armies.push({ id: S.nid++, o: o, q: take0, path: path0, t0: S.time, k: 0, st: Math.round(STEP / (1 + 0.3 * bn(S, o, 'spd')) * 1000) / 1000 });
+      return null;
+    }
+    if (T.o !== o) return '這不是你的土地';
+    if (a.t === 'rec') {
+      var elite = !!a.e, cm = 1 - 0.25 * bn(S, o, 'cost'), tm = Math.pow(0.5, bn(S, o, 'train'));
+      if (elite) { if (T.t !== 'e') return '精兵只能在精兵營招'; }
+      else if (!canRecruit(S, a.i, o)) return '只有主城、遺蹟或箭樓可以招兵';
+      var cf = Math.round((elite ? COST.recE.food : COST.rec) * cm), ci = elite ? Math.round(COST.recE.iron * cm) : 0;
+      if (p.food < cf) return '糧食不夠（要 ' + cf + '）';
+      if (p.iron < ci) return '鐵不夠（要 ' + ci + '）';
+      if (T.q.length + alSq(T) + (T.tr ? T.tr.length : 0) >= tileCap(S, a.i)) return '這格最多 ' + tileCap(S, a.i) + ' 隊';
+      if (squadsOf(S, o) >= squadCap(S, o)) return '隊伍已達上限（多佔土地或遺蹟可以提高）';
+      p.food -= cf; p.iron -= ci;
+      if (!T.tr) T.tr = [];
+      var start = T.tr.length ? T.tr[T.tr.length - 1].d : S.time;
+      var job = { d: Math.round((start + (elite ? TRAIN_E : TRAIN) * tm) * 10) / 10 };
+      if (elite) job.e = 1;
+      T.tr.push(job);
+      return null;
+    }
+    if (a.t === 'fill') {
+      var okN = canRecruit(S, a.i, o), okE = T.t === 'e';
+      if (!okN && !okE) return '只有主城、遺蹟、箭樓或精兵營可以補兵';
+      if (T.s) return '攻城中不能補兵';
+      var cm2 = 1 - 0.25 * bn(S, o, 'cost'), need = [], total = 0;
+      T.q.forEach(function (sq) {
+        var m0 = SQ - men(sq); if (!m0) return;
+        if (sq.e ? !okE : !okN) return;
+        var each = (sq.e ? COST.fillE : COST.fill) * cm2;
+        need.push({ sq: sq, m: m0, each: each }); total += m0;
+      });
+      if (!total) return okE && !okN ? '精兵營只能補精兵，每一隊都是滿的' : '每一隊都是滿的';
+      var spent = 0, filled = 0;
+      need.forEach(function (x) {
+        var can = Math.min(x.m, Math.floor((p.food - spent) / x.each + 1e-9));
+        if (can <= 0) return;
+        spent += can * x.each; filled += can;
+        x.sq.h = Math.min(sqMax(x.sq), (men(x.sq) + can) * hpu(x.sq));
+      });
+      if (!filled) return '糧食不夠';
+      p.food -= spent;
+      return null;
+    }
+    if (a.t === 'buff') {
+      if (T.t !== 'r') return '只有遺蹟有 buff';
+      if (!BUFFS[a.k]) return 'buff 錯誤';
+      if (heldBuffs(S, o, a.i).indexOf(a.k) >= 0) return '其他遺蹟已經有這個 buff';
+      if (T.bo) {
+        if (T.bo.indexOf(a.k) < 0) return '請從選項裡選';
+        T.bf = a.k; T.bo = null; fixSentry(S); return null;
+      }
+      if (T.bf === a.k) return '已經是這個 buff';
+      if (S.time < (T.bc || 0)) return '還要等 ' + Math.ceil(T.bc - S.time) + ' 秒才能再換';
+      if (p.food < COST.buff.food || p.iron < COST.buff.iron) return '資源不夠（要 🌾' + COST.buff.food + ' ⛏' + COST.buff.iron + '）';
+      p.food -= COST.buff.food; p.iron -= COST.buff.iron;
+      T.bf = a.k; T.bc = S.time + BUFF_CD; fixSentry(S);
+      return null;
+    }
+    if (a.t === 'sup') {
+      if (!T.sl) return '這裡沒有哨塔';
+      if (T.sl >= 3) return '哨塔已經最高級';
+      var c = COST.sentry[T.sl + 1];
+      if (p.iron < c) return '鐵不夠（要 ' + c + '）';
+      p.iron -= c; T.sl++; fullHP(S, T, a.i);
+      return null;
+    }
+    if (a.t === 'wall') {
+      if (T.w >= 3) return '城牆已經最高級';
+      var w = COST.wall[T.w];
+      if (p.iron < w) return '鐵不夠（要 ' + w + '）';
+      p.iron -= w; T.w++; return null;
+    }
+    if (a.t === 'auto') {
+      if (!canRecruit(S, a.i, o) && T.t !== 'e') return '只有主城、遺蹟、箭樓或精兵營可以設定';
+      if (a.k === 'ar') T.ar = T.ar ? 0 : 1;
+      else if (a.k === 'af') T.af = T.af ? 0 : 1;
+      else return '設定錯誤';
+      return null;
+    }
+    if (a.t === 'mv') {
+      if (S.phase !== 'play') return '準備期還不能出兵';
+      var ids = (a.ids || []).slice(0, CAP_SQ);
+      var take = T.q.filter(function (s) { return ids.indexOf(s.i) >= 0; });
+      if (!take.length) return '請選擇要出動的隊伍';
+      var path = findPath(S, o, a.i, a.j);
+      if (!path) return '到不了那裡';
+      var D = S.tiles[a.j];
+      if (friendly(S, D.o, o) && D.q.length + alSq(D) + (D.tr ? D.tr.length : 0) + incoming(S, o, a.j) + take.length > tileCap(S, a.j)) return '目的地最多 ' + tileCap(S, a.j) + ' 隊';
+      T.q = T.q.filter(function (s) { return ids.indexOf(s.i) < 0; });
+      S.armies.push({ id: S.nid++, o: o, q: take, path: path, t0: S.time, k: 0, st: Math.round(STEP / (1 + 0.3 * bn(S, o, 'spd')) * 1000) / 1000 });
+      return null;
+    }
+    return '未知的操作';
+  }
+
+  // ---------- 機器人 ----------
+  function defMen(S, ti, o) {   // 打下這格大約要多少人
+    var T = S.tiles[ti], d = powerOf(defQ(T)) / (WALL_MUL[T.w] || 1);
+    if (T.sl) d += SENTRY[T.sl].stop * Math.sqrt(Math.max(0.1, T.sh / sentryMax(S, T, ti))) * (isCapital(S, ti) ? 1.4 : 1);
+    if (T.s) T.s.forEach(function (s) { if (s.o !== o) d -= menOf(s.q) * 0.3; });
+    return Math.max(0, d);
+  }
+  function value(S, ti, o) {
+    var T = S.tiles[ti], v = T.lv ? [0, 2, 3.5, 5][T.lv] : ({ w: 6, e: 4, r: 9, c: 3 }[T.t] || 1);
+    if (isCapital(S, ti)) v += 8;
+    if (T.o >= 0) v += 1;
+    var mine = 0; nb4(ti).forEach(function (j) { if (friendly(S, S.tiles[j].o, o)) mine++; });
+    v += mine * 0.4;
+    if (T.o >= 0) {
+      var D = DIFF[S.diff] || DIFF.easy;
+      if (S.players[T.o].human) v *= D.human;
+      if (D.gang < 1 && beingHit(S, T.o, o)) v *= D.gang;   // 別的電腦正在打這個人 → 換目標
+    }
+    return v;
+  }
+  function beingHit(S, victim, me) {
+    for (var k = 0; k < S.armies.length; k++) { var a = S.armies[k]; if (a.o !== me && a.o !== victim && !S.players[a.o].human && S.tiles[a.path[a.path.length - 1]].o === victim) return true; }
+    for (var i = 0; i < S.tiles.length; i++) {
+      var T = S.tiles[i];
+      if (T.o === victim && T.s) for (var j = 0; j < T.s.length; j++) if (T.s[j].o !== me && !S.players[T.s[j].o].human) return true;
+    }
+    return false;
+  }
+  function pick(q, need, keep) {   // 從多到少挑隊，湊到 need 人
+    var list = q.slice().sort(function (a, b) { return b.h - a.h; }), out = [], got = 0;
+    for (var k = 0; k < list.length - keep && got < need; k++) { out.push(list[k]); got += men(list[k]) * (list[k].e ? 1.8 : 1); }
+    return got >= need ? out : null;
+  }
+  // 每一種想法：成功送出指令就回傳 true
+  function bFill(S, p) {
+    var done = false;
+    S.tiles.forEach(function (T, i) {
+      if (done || T.o !== p.seat || (!canRecruit(S, i, p.seat) && T.t !== 'e') || T.s) return;
+      var miss = 0; T.q.forEach(function (s) { miss += SQ - men(s); });
+      if (miss >= 3 && p.food >= miss * COST.fillE) done = !act(S, p.pid, { t: 'fill', i: i });
+    });
+    return done;
+  }
+  function bRecruit(S, p) {
+    var camp = -1;
+    S.tiles.forEach(function (T, i) { if (camp < 0 && T.o === p.seat && T.t === 'e' && T.q.length + (T.tr ? T.tr.length : 0) < TILE_SQ) camp = i; });
+    if (camp >= 0 && p.food >= COST.recE.food + 20 && p.iron >= COST.recE.iron && Math.random() < 0.5 && !act(S, p.pid, { t: 'rec', i: camp, e: 1 })) return true;
+    if (p.food < COST.rec) return false;
+    var spots = [], capT = S.tiles[p.cap];
+    S.tiles.forEach(function (T, i) { if (canRecruit(S, i, p.seat)) spots.push(i); });
+    if (!spots.length) return false;
+    var at = spots.indexOf(p.cap) >= 0 && capT.q.length + (capT.tr ? capT.tr.length : 0) < CAP_SQ ? p.cap : spots[Math.floor(Math.random() * spots.length)];
+    return !act(S, p.pid, { t: 'rec', i: at });
+  }
+  function bIron(S, p) {
+    var o = p.seat, tiles = S.tiles, capT = tiles[p.cap];
+    if (capT.o === o && capT.w < 2 && p.iron >= COST.wall[capT.w] + 10 && Math.random() < 0.5) return !act(S, p.pid, { t: 'wall', i: p.cap });
+    if (p.iron < 30) return false;
+    var front = [];
+    tiles.forEach(function (T, i) {
+      if (T.o !== o || !T.sl || T.sl >= 3) return;
+      var enemy = 0; nb8(i).forEach(function (j) { var U = tiles[j]; if (U.o >= 0 && !friendly(S, U.o, o)) enemy++; });
+      if (enemy || T.t === 'r') front.push(i);
+    });
+    front.sort(function (a, b) { return tiles[a].sl - tiles[b].sl; });
+    return front.length ? !act(S, p.pid, { t: 'sup', i: front[0] }) : false;
+  }
+  function bDefend(S, p, D) {
+    var o = p.seat, tiles = S.tiles, hit = -1;
+    tiles.forEach(function (T, i) {
+      if (hit >= 0 || T.o !== o || !T.s) return;
+      if (T.s.some(function (s) { return S.time - (s.t0 || 0) >= D.react; })) hit = i;
+    });
+    if (hit < 0 && S.mode === 'team') {   // 第 19 版：隊友的地被打（主城優先）→ 派援軍
+      var best = -1, bv = 0;
+      tiles.forEach(function (T, i) {
+        if (!ally(S, T.o, o) || !T.s) return;
+        if (!T.s.some(function (s) { return S.time - (s.t0 || 0) >= D.react; })) return;
+        var v = isCapital(S, i) ? 3 : 1; if (v > bv) { bv = v; best = i; }
+      });
+      if (best >= 0 && (bv >= 3 || Math.random() < 0.5)) hit = best;
+    }
+    if (hit < 0) return false;
+    var R = reach(S, o, hit), bestS = -1, bs = 0;
+    Object.keys(R.dist).forEach(function (k) {
+      k = +k; if (k === hit || R.dist[k] > 5 || tiles[k].s || tiles[k].o !== o) return;
+      var spare = tiles[k].q.length - (k === p.cap ? 1 : 0);
+      if (spare > bs) { bs = spare; bestS = k; }
+    });
+    if (bestS < 0) return false;
+    var room = tileCap(S, hit) - tiles[hit].q.length - alSq(tiles[hit]) - incoming(S, o, hit);
+    var send = tiles[bestS].q.slice(0, Math.min(bs, room)).map(function (s) { return s.i; });
+    return send.length ? !act(S, p.pid, { t: 'mv', i: bestS, j: hit, ids: send }) : false;
+  }
+  function bAttack(S, p) {
+    var o = p.seat, tiles = S.tiles, srcs = [];
+    tiles.forEach(function (T, i) { if (T.o === o && !T.s && T.q.length) srcs.push(i); });
+    srcs.sort(function (a, b) { return menOf(tiles[b].q) - menOf(tiles[a].q); });
+    var best = null;
+    srcs.slice(0, 3).forEach(function (si) {
+      var tg = targets(S, o, si), keep = si === p.cap ? 1 : 0;
+      Object.keys(tg).forEach(function (k) {
+        k = +k; var T = tiles[k]; if (friendly(S, T.o, o)) return;
+        var need = Math.ceil(defMen(S, k, o) * 1.3 + 2), sel = pick(tiles[si].q, need, keep);
+        if (!sel) return;
+        var sc = value(S, k, o) / (need + 3) / (1 + 0.2 * tg[k]);
+        if (!best || sc > best.sc) best = { sc: sc, i: si, j: k, ids: sel.map(function (s) { return s.i; }) };
+      });
+    });
+    return best ? !act(S, p.pid, { t: 'mv', i: best.i, j: best.j, ids: best.ids }) : false;
+  }
+  function bForward(S, p) {
+    var o = p.seat, tiles = S.tiles, capT = tiles[p.cap];
+    if (capT.o !== o || capT.q.length < 3) return false;
+    var tg2 = targets(S, o, p.cap), fr = -1, fd = 1e9;
+    Object.keys(tg2).forEach(function (k) {
+      k = +k; if (tiles[k].o !== o || tiles[k].q.length + incoming(S, o, k) >= tileCap(S, k) - 1) return;
+      var edge = nb4(k).some(function (j) { return !friendly(S, tiles[j].o, o) && tiles[j].t !== 'x'; });
+      if (edge && tg2[k] < fd) { fd = tg2[k]; fr = k; }
+    });
+    return fr >= 0 ? !act(S, p.pid, { t: 'mv', i: p.cap, j: fr, ids: capT.q.slice(0, 2).map(function (s) { return s.i; }) }) : false;
+  }
+  // 每秒呼叫；依難度決定多久真的想一次、每次做幾件事
+  function botThink(S, p, diff) {
+    if (!p.alive || S.phase === 'end') return;
+    var o0 = p.seat;
+    var D = DIFF[diff || S.diff] || DIFF.easy;
+    // 遺蹟 buff 選項：馬上選（照偏好順序）
+    var PREF = ['atk', 'def', 'food', 'spd', 'tower', 'cost', 'iron', 'train'];
+    S.tiles.forEach(function (T, i) {
+      if (T.o !== p.seat || !T.bo) return;
+      var h = heldBuffs(S, p.seat, i), k = PREF.filter(function (x) { return T.bo.indexOf(x) >= 0 && h.indexOf(x) < 0; })[0];
+      if (!k) return;
+      act(S, p.pid, { t: 'buff', i: i, k: k });
+    });
+    if (S.time < (p.bt || 0)) return;
+    p.bt = S.time + D.think * (0.8 + Math.random() * 0.4);
+    var play = S.phase === 'play';
+    // 簡單／普通：每次只做一件事；困難（第 14 版）：每次最多做 D.acts 件事
+    var order = [];
+    if (play) order.push(bDefend);
+    var eco = [bFill, bRecruit, bIron];
+    if (play && Math.random() < 0.5) order = order.concat([bAttack], eco, [bForward]);
+    else order = order.concat(eco, play ? [bAttack, bForward] : []);
+    var done = 0, max = D.acts || 1;
+    for (var k = 0; k < order.length && done < max; k++) if (order[k](S, p, D)) done++;
+    if (S.mode === 'team' && play) S.players.forEach(function (m) {   // 第 19 版：隊友很窮時偶爾送糧
+      if (ally(S, o0, m.seat) && m.alive && m.food < 40 && p.food > 220 && Math.random() < 0.3) act(S, p.pid, { t: 'gift', to: m.seat, k: 'food' });
+    });
+  }
+
+  return {
+    N: N, STEP: STEP, PREP: PREP, GAME: GAME, HPU: HPU, SQ: SQ, TILE_SQ: TILE_SQ, CAP_SQ: CAP_SQ, ally: ally, friendly: friendly, alQ: alQ, alSq: alSq, defQ: defQ, GIFT: GIFT, tileCap: tileCap, findPath: findPath, reach: reach, TRAIN: TRAIN, INFO: INFO, COST: COST, WALL_MUL: WALL_MUL, SENTRY: SENTRY,
+    DIFF: DIFF, LAND: LAND, prod: prod, BUFFS: BUFFS, BUFF_KEYS: BUFF_KEYS, BUFF_CD: BUFF_CD, bn: bn, heldBuffs: heldBuffs, hpu: hpu, powerOf: powerOf, TRAIN_E: TRAIN_E, RUIN_WIN: RUIN_WIN, RUIN_HOLD: RUIN_HOLD, RUIN_CAP: RUIN_CAP, ruinsOf: ruinsOf, MIN_PLAYERS: 4, idx: idx, rc: rc, nb4: nb4, men: men, menOf: menOf, hpOf: hpOf,
+    newGame: newGame, advance: advance, step: step, act: act, botThink: botThink, P: P,
+    targets: targets, findPath: findPath, squadsOf: squadsOf, squadCap: squadCap, menAll: menAll, rate: rate, scoreOf: scoreOf,
+    canRecruit: canRecruit, isCapital: isCapital, sentryMax: sentryMax, tname: tname, refresh: refresh, siegeTick: siegeTick
+  };
+})();
+if (typeof module !== 'undefined') module.exports = E;
+
+// ================= 畫面與連線 =================
+function $(id) { return document.getElementById(id); }
+function store(k, v) { try { if (v === undefined) return JSON.parse(localStorage.getItem('tz_' + k)); localStorage.setItem('tz_' + k, JSON.stringify(v)); } catch (e) { return null; } }
+function unstore(k) { try { localStorage.removeItem('tz_' + k); } catch (e) {} }
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+// 第 3 版：不在地圖上彈出提示；只有操作失敗的原因顯示在下方面板 3.5 秒
+var panelMsg = '', panelMsgAt = 0;
+function toast(t, cls) {
+  if (cls !== 'bad') return;
+  panelMsg = t; panelMsgAt = Date.now();
+  if (typeof renderPanel === 'function' && S) renderPanel();
+}
+document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+
+var SEAT = ['#e5484d', '#3b82f6', '#f2a516', '#a35ee8'];
+var SEATN = ['紅', '藍', '黃', '紫'];
+function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+// ---------- 像素圖 ----------
+var PAL = {
+  k: '#2b2118', a: '#e2d8c4', b: '#8d8273', d: '#6b4423', w: '#f5f5f0', c: '#6c645a', y: '#f4d35e', Y: '#d39a2c', h: '#7a5a2a',
+  o: '#8fe3f5', g: '#3f7d3a', G: '#5ea44a', t: '#6b4a2a', e: '#ff3b30', p: '#c79cff', s: '#f1c9a0', m: '#c9a227', n: '#e8dcc0', r: '#c0392b'
+};
+var SPR = {
+  // 第 10 版：新主城 20×20（P／p＝屋頂主人色亮／暗，F＝旗子，y＝金邊）
+  castle: ['..........kF........', '..........kFF.......', '.........kk.........', '........kPpk........', '.......kPPppk.......', '......kPPPpppk......', '..kk..kyyyyyyk..kk..', '.kPpk.kaaaaabk.kPpk.', 'kPPppkkaawwabkkPPppk', 'kyyyykkaawwabkkyyyyk', 'kaaabkkaaaaabkkaaabk', 'kawwbkkabaaabkkawwbk', 'kawwbkkaaaaabkkawwbk', 'kaaabkkaaabaakkaaabk', 'kabaakkaaaaabkkabaak', 'kaaabkaakkkkaakaaabk', 'kaabakbakddkabkaabak', 'kaaabkaakddkaakaaabk', 'kaaabkaakddkaakaaabk', 'kkkkkkkkkkkkkkkkkkkk'],
+  mtn: ['............', '.....kk.....', '....kwwk....', '...kwwbbk...', '...kwbbbk...', '..kbbbbbbk..', '..kbbbcbbbk.', '.kbbbccbbbk.', '.kbbccbbbbbk', 'kbbccbbbbbbk', 'kkkkkkkkkkkk', '............'],
+  farm: ['............', '.y..y..y..y.', '.Y..Y..Y..Y.', '.h..h..h..h.', '............', '...y..y..y..', '...Y..Y..Y..', '...h..h..h..', '............', '.y..y..y..y.', '.Y..Y..Y..Y.', '.h..h..h..h.'],
+  mine: ['............', '............', '....kkkk....', '...kbbbbk...', '..kbbobbbk..', '..kbbbbobk..', '.kbobbbbbbk.', '.kbbbbkkbbk.', '.kbbbk..kbk.', '.kkkkk..kkk.', '............', '............'],
+  // 第 12 版：遺蹟＝神殿廢墟＋漂浮紫水晶 20×20（P／p 水晶、g 光暈）
+  ruin: ['....................', '....w....gg.........', '....................', '.......g.kk.g..w....', 'kkkkkkk.kPPk........', 'kaaaabgkPPPpkg......', 'kkkkkkkkPPppk....w..', '.kabbk..kPpk........', '.kabbk.g.kk.g..k.k..', '.kabbk........kakak.', '.kabbk...gg...kabbk.', '.kabbk........kabbk.', '.kabbk.kkkkkk.kabbk.', '.kabbk.kaaaak.kabbk.', '.kabbk.kbbbbk.kabbk.', '.kabbk.kbbbbk.kabbk.', 'kkkkkkkkkkkkkkkkkkkk', 'kaaaaaaaaaaaaaaaaaak', 'kbbbbbbbbbbbbbbbbbbk', 'kkkkkkkkkkkkkkkkkkkk'],
+  wild: ['............', '..kk....kk..', '.kGGk..kGGk.', 'kGgGGkkGgGGk', 'kGGgGkkGGgGk', '.kGGk..kGGk.', '..kt.kk.tk..', '..kt.ee.tk..', '..kk.kk.kk..', '............', '............', '............'],
+  tower: ['..k.k.k.k...', '..kkkkkkk...', '...kaaak....', '...kabak....', '...kaaak....', '...kabak....', '...kaaak....', '..kaaaaak...', '..kkkkkkk...'],
+  // 第 5 版：哨塔 Lv2 石哨塔、Lv3 箭樓（F＝旗子，換成主人顏色）；Lv1 不畫
+  t1: ['............', '....kkkk....', '...kDDDDk...', '..kDDDDDDk..', '..kkkkkkkk..', '...kdttdk...', '...kd..dk...', '...kkkkkk...', '...kd..dk...', '...kdkkdk...', '...kd..dk...', '...kdkkdk...', '...kd..dk...', '..kkk..kkk..'],
+  t2: ['......kF....', '......kFFF..', '......kF....', '..k.k.kk.k..', '..kakkkkak..', '..kaaaaaak..', '..kkkkkkkk..', '...kPPPPk...', '...kpbbpk...', '...kaaaak...', '...kaaaak...', '...kabbak...', '...kaaaak...', '...kaaaak...', '..kaaaaaak..', '..kkkkkkkk..'],
+  t3: ['......kF....', '......kFFF..', '......kF....', '.....kkk....', '....kPPPk...', '...kPPpPPk..', '..kpppppppk.', '..kkkkkkkkk.', '...kabbbak..', '...kaaaaak..', '..k.k.k.k.k.', '..kaaaaaaak.', '..kabaaabak.', '..kaaaaaaak.', '.kaaaakaaaak', '.kkkkkkkkkkk'],
+  elite: ['.....kyy....', '.....kyyy...', '.....ky.....', '.....k......', '....kkk.....', '...knnnk....', '..knnyynk...', '.knnyyyynk..', 'knnnyynnnnk.', 'knnnk.knnnk.', 'kkkkk.kkkkk.', '............'],
+  camp: ['.....k......', '....knk.....', '...knnnk....', '..knnknnk...', '.knnk.knnk..', 'kkkkk.kkkkk.'],
+  // 第 11 版：一般兵（長矛＋木盾，衣服＝主人色）、精兵（金甲＋劍＋金盾，羽毛＝主人色）16×16
+  man: ['...........kk...', '..........kwwk..', '...........kk...', '.....kkkk..kh...', '....kmmmmk.kh...', '...kmMmmmmkkh...', '....kssssk.kh...', '....kksksk.kh...', '.....kssk..kh...', '..kkkkPPkkkkh...', '.kbbbkPPPPksk...', '.kbBbkPpPPkkh...', '.kbbbkPPPPk.h...', '..kkkkddddk.h...', '....kdk.kdk.....', '....kkk.kkk.....'],
+  manE: ['......kPPk......', '.....kPPPpk.....', '....kkyyyykk....', '...kyYyyyyYyk...', '...kyyyyyyyyk...', '...kyksssskyk...', '....kskskskk....', '..kk.kssssk..kw.', '.kYYkkyPPykkkwk.', 'kYyyYkPPPpkkwk..', 'kYyrYkPyyPksk...', 'kYyyYkPPPpk.k...', '.kYYkkPPPpk.....', '..kk.kddddk.....', '....kdk..kdk....', '....kkk..kkk....']
+};
+function sprite(rows, pal) {
+  var h = rows.length, w = rows[0].length, c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var x = c.getContext('2d');
+  rows.forEach(function (row, r) {
+    for (var i = 0; i < row.length; i++) { var ch = row[i]; if (ch === '.') continue; var col = pal[ch] || PAL[ch]; if (!col) continue; x.fillStyle = col; x.fillRect(i, r, 1, 1); }
+  });
+  return c;
+}
+var IMG = {};
+function darker(hex, f) { var n = parseInt(hex.slice(1), 16), r = Math.round((n >> 16) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f); return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+var CASTLE_PAL = { a: '#ece2cd', b: '#beb29b', w: '#3a2f23', d: '#6e4623', y: '#f4c95d' };
+function castleImg(col) { var pl = {}; for (var k in CASTLE_PAL) pl[k] = CASTLE_PAL[k]; pl.P = col; pl.p = darker(col, 0.7); pl.F = col; return sprite(SPR.castle, pl); }
+Object.keys(SPR).forEach(function (k) { if (k !== 'man' && k !== 'manE' && k !== 't3' && k !== 'castle' && k !== 'ruin') IMG[k] = sprite(SPR[k], {}); });
+IMG.ruin = sprite(SPR.ruin, { a: '#e2d8c4', b: '#b0a694', c: '#786e62', P: '#c79cff', p: '#8a5cd1', g: '#e1cdff', w: '#ffffff' });
+IMG.castleBy = SEAT.map(castleImg); IMG.castle = castleImg('#9a9a9a');
+// 第 15 版：三種哨塔都用隊伍顏色（木哨塔屋頂、石哨塔旗子＋布條、箭樓屋頂＋旗子）
+IMG.t3 = SEAT.map(function (col) { return sprite(SPR.t3, { F: col, P: col, p: darker(col, 0.7) }); });
+IMG.t2c = SEAT.map(function (col) { return sprite(SPR.t2, { F: col, P: col, p: darker(col, 0.7) }); });
+// 第 5 版：農田／礦山等級圖示＝1／4／9 束麥穗或顆石頭（19×19 像素）
+(function () {
+  var ROCK = ['.kkk.', 'kwbbk', 'kbbBk', 'kkkkk'], WHEAT = ['y.y.y', '.yyy.', '..Y..', '..Y..', 'hhhhh'];
+  var LP = { k: '#2b2118', b: '#a0968c', B: '#736a62', w: '#d2ccc4', y: '#f4d35e', Y: '#d39a2c', h: '#966929' };
+  function grid(unit, n) {
+    var S0 = 19, c = document.createElement('canvas'); c.width = S0; c.height = S0;
+    var x = c.getContext('2d'), k = [0, 1, 2, 3][n], cell = S0 / k, uw = unit[0].length, uh = unit.length;
+    for (var gy = 0; gy < k; gy++) for (var gx = 0; gx < k; gx++) {
+      var ox = Math.round(gx * cell + (cell - uw) / 2), oy = Math.round(gy * cell + (cell - uh) / 2);
+      unit.forEach(function (row, yy) { for (var xx = 0; xx < row.length; xx++) { var col = LP[row[xx]]; if (col) { x.fillStyle = col; x.fillRect(ox + xx, oy + yy, 1, 1); } } });
+    }
+    return c;
+  }
+  IMG.f = [null, grid(WHEAT, 1), grid(WHEAT, 2), grid(WHEAT, 3)];
+  IMG.m = [null, grid(ROCK, 1), grid(ROCK, 2), grid(ROCK, 3)];
+})();
+var SENTRY_NAME = [null, '木哨塔', '石哨塔', '箭樓'];
+var MAN_PAL = { w: '#ebf0f5', h: '#82552d', m: '#969ba5', M: '#cdd2da', s: '#f1c9a0', b: '#8c5e34', B: '#cdd2da', d: '#503c2d', y: '#f4c95d', Y: '#c48c28', r: '#d63c34' };
+function manImg(rows, col) { var pl = {}; for (var k in MAN_PAL) pl[k] = MAN_PAL[k]; pl.P = col; pl.p = darker(col, 0.7); return sprite(rows, pl); }
+IMG.man = SEAT.map(function (col) { return manImg(SPR.man, col); });
+IMG.manE = SEAT.map(function (col) { return manImg(SPR.manE, col); });
+var MAN_URL = IMG.man.map(function (c) { return c.toDataURL(); }), MANE_URL = IMG.manE.map(function (c) { return c.toDataURL(); });
+// 第 10 版：新標誌（盾牌＋交叉長劍＋主城）44×46
+var LOGO = ['............................................', '....k..................................k....', '...kkk................................kkk...', '..kkksk..............................kskkk..', '...ksssk............................ksssk...', '....ksSsk..........................ksSsk....', '.....ksSsk........................ksSsk.....', '......ksSkkkkkkkkkkkkkkkkkkkkkkkkkkSsk......', '.......kskyyyyyyyyyyyyyyyyyyyyyyyyksk.......', '.......kskyYYYYYYYYYYYYYYYYYYYYYYyksk.......', '........kkyYBBBBCBBBBBCBBBBBCBBBYykk........', '.........kyYBBBBBCBBBBBCBBBBBCBBYyk.........', '.........kyYCBBBBBCBBBkFCBBBBBCBYyk.........', '.........kyYBCBBBBBCBBkFFCBBBBBCYyk.........', '.........kyYBBCBBBBBCkkBBBCBBBBBYyk.........', '.........kyYBBBCBBBBkPpkBBBCBBBBYyk.........', '.........kyYBBBBCBBkPPppkBBBCBBBYyk.........', '.........kyYBBBBBCkPPPpppkBBBCBBYyk.........', '.........kyYCBkkBBkyyyyyykBBkkCBYyk.........', '.........kyYBkPpkBkaaaaabkBkPpkCYyk.........', '.........kyYkPPppkkaawwabkkPPppkYyk.........', '.........kyYkyyyykkaawwabkkyyyykYyk.........', '.........kyYkaaabkkaaaaabkkaaabkYyk.........', '.........kyYkawwbkkabaaabkkawwbkYyk.........', '.........kyYkawwbkkaaaaabkkawwbkYyk.........', '.........kyYkaaabkkaaabaakkaaabkYyk.........', '.........kyYkabaakkaaaaabkkabaakYyk.........', '.........kyYkaaabkaakkkkaakaaabkYyk.........', '.........kyYkaabakbakddkabkaabakYyk.........', '.........kyYkaaabkaakddkaakaaabkYyk.........', '........kkyYkaaabkaakddkaakaaabkYykk........', '.........kkykkkkkkkkkkkkkkkkkkkkykk.........', '..........kyYBCBBBBBCBBBBBCBBBBYyk..........', '..........kyYYBCBBBBBCBBBBBCBBYYyk..........', '.........kkkyYBBCBBBBBCBBBBBCBYykkk.........', '........kkhkyyYBBCBBBBBCBBBBBYyykhkk........', '.......kkhkkkyYYBBCBBBBBCBBBYYykkkhkk.......', '......kkhkk..kyYYBBCBBBBBCBYYyk..kkhkk......', '.....kkykk...kkyYYBBCBBBBBYYykk...kkykk.....', '......kkk.....kkyyYYYYYYYYyykk.....kkk......', '.......k........kkyyyyyyyykk........k.......', '.................kkkkkkkkkk.................', '............................................', '............................................', '............................................', '............................................'];
+(function logo() {
+  var c = $('logo'), x = c.getContext('2d');
+  c.width = LOGO[0].length; c.height = LOGO.length;
+  x.drawImage(sprite(LOGO, { P: '#e5484d', p: '#aa2d34', F: '#e5484d', s: '#c8ced6', S: '#f5f8fc', h: '#784824', y: '#f4c95d', Y: '#c89628', B: '#284678', C: '#34568c', a: '#ece2cd', b: '#beb29b', w: '#3a2f23', d: '#6e4623' }), 0, 0);
+})();
+
+// ---------- 連線（Apps Script） ----------
+// 第 13 版：網頁放在 GitHub Pages 時，用 fetch 呼叫 Apps Script 的 JSON API（不帶登入資料，學校帳號也能玩）；
+// 若是從 Apps Script 網址直接打開，仍用 google.script.run。
+var API_URL = window.TZ_API || 'https://script.google.com/macros/s/AKfycbwgQ588CEXjgXm76rKwGQbjn4xOrUmdKL5iwtDYZgib2LzkJvr_NBlh9SGkhd-6oyts/exec';
+var gsr = typeof google !== 'undefined' && google.script && google.script.run;
+var hasNet = !!(gsr || (API_URL && /^https?:$/.test(location.protocol)));
+function run(fn) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  if (gsr) return new Promise(function (ok, fail) {
+    var r = google.script.run.withSuccessHandler(ok).withFailureHandler(function (e) { fail(e && e.message ? e.message : String(e)); });
+    r[fn].apply(r, args);
+  });
+  var ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = ac ? setTimeout(function () { ac.abort(); }, 25000) : 0;
+  return fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ fn: fn, args: args }), credentials: 'omit', redirect: 'follow', signal: ac ? ac.signal : undefined })
+    .then(function (r) { if (!r.ok) throw new Error('連線失敗（' + r.status + '）'); return r.json(); })
+    .then(function (j) { clearTimeout(timer); if (!j || !j.ok) throw new Error(j && j.error ? j.error : '伺服器沒有回應'); return j.data; })
+    .catch(function (e) { clearTimeout(timer); throw (e && e.name === 'AbortError') ? '連線逾時' : (e && e.message ? e.message : String(e)); });
+}
+
+// ---------- 狀態 ----------
+var me, S, recvAt, lobbyPlayers, ver, lastVer, pending, seq, lastEv, loops, running, sess = 0, hostBusy, lastRecv, endShown;
+var tab = store('tab') || 'mv';
+var sel = -1, aim = 0, tgt = null, pickOn = {}, zoomFit = false, cs = 44, dpr = 1;
+var aimEach = 0, gather = {}, estCache = {};   // 第 17 版：連續出兵（每點一格派幾隊，0＝勾選的）、先點目標再湊兵
+function resetVars() {
+  me = { name: '', code: '', pid: '', host: false, solo: false };
+  S = null; recvAt = 0; lobbyPlayers = []; ver = 0; lastVer = 0; pending = []; seq = 0; lastEv = -1;
+  loops = []; running = false; hostBusy = 0; lastRecv = Date.now(); endShown = false;
+  sel = -1; aim = 0; tgt = null; pickOn = {}; aimEach = 0; gather = {}; estCache = {}; bgKey = ''; panelHtml = ''; centered = false;
+}
+var bgKey = '', panelHtml = '', centered = false;
+resetVars();
+function mySeat() { if (!S) return -1; var p = E.P(S, me.pid); return p ? p.seat : -1; }
+function myP() { return S ? E.P(S, me.pid) : null; }
+
+// ---------- 大廳 ----------
+$('nameInp').value = store('name') || '';
+$('diffSel').value = store('diff') || 'easy';
+$('modeSel').value = store('mode') || 'ffa';
+$('modeSel').onchange = function () { store('mode', $('modeSel').value); if (me && me.host && !S) { lobbyOpt.mode = $('modeSel').value; renderWait(); } };
+var lobbyOpt = { mode: 'ffa', teams: {} };   // 第 19 版：開房時的模式與分隊（房主決定，跟著大廳狀態傳給大家）
+function modeOf(v) { return v === 'adj' || v === 'diag' ? { mode: 'team', layout: v } : { mode: 'ffa' }; }
+$('diffSel').onchange = function () { store('diff', $('diffSel').value); };
+function showResume() {
+  var saved = store('room');
+  $('btnResume').classList.toggle('hidden', !(saved && hasNet));
+  if (saved) $('btnResume').textContent = '回到房間 ' + saved.code;
+}
+showResume();
+if (hasNet) run('ping').catch(function () {});
+function getName() {
+  var n = $('nameInp').value.trim().slice(0, 8);
+  if (!n) { $('homeErr').textContent = '請先輸入名字'; return null; }
+  store('name', n); return n;
+}
+function busy(b) { ['btnCreate', 'btnJoin', 'btnSolo', 'btnResume'].forEach(function (id) { $(id).disabled = b; }); }
+$('btnCreate').onclick = function () {
+  var n = getName(); if (!n) return;
+  if (!hasNet) { $('homeErr').textContent = '這個頁面沒有連線功能，請用單人練習'; return; }
+  busy(true); $('homeErr').textContent = '開房中…';
+  run('createRoom', n).then(function (r) { busy(false); $('homeErr').textContent = ''; enterWait(r, n); }).catch(function (e) { busy(false); $('homeErr').textContent = '開房失敗：' + e; });
+};
+$('btnJoin').onclick = function () {
+  var n = getName(); if (!n) return;
+  var c = $('codeInp').value.trim();
+  if (!/^\d{4}$/.test(c)) { $('homeErr').textContent = '房號是 4 位數字'; return; }
+  if (!hasNet) { $('homeErr').textContent = '這個頁面沒有連線功能，請用單人練習'; return; }
+  busy(true); $('homeErr').textContent = '加入中…';
+  run('joinRoom', c, n).then(function (r) {
+    busy(false);
+    if (r.error) { $('homeErr').textContent = r.error; return; }
+    $('homeErr').textContent = ''; enterWait(r, n);
+  }).catch(function (e) { busy(false); $('homeErr').textContent = '加入失敗：' + e; });
+};
+$('btnSolo').onclick = function () {
+  var n = getName(); if (!n) return;
+  me = { name: n, code: '', pid: 'solo', host: true, solo: true };
+  startGame([{ pid: 'solo', name: n }]);
+};
+$('btnResume').onclick = function () {
+  var saved = store('room'); if (!saved) return;
+  busy(true); $('homeErr').textContent = '連線中…';
+  run('resumeRoom', saved.code, saved.pid).then(function (r) {
+    busy(false); $('homeErr').textContent = '';
+    if (r.error) { $('homeErr').textContent = r.error; unstore('room'); showResume(); return; }
+    me = { name: r.name, code: r.code, pid: r.pid, host: r.host, solo: false };
+    lobbyPlayers = r.players;
+    var st = r.state ? JSON.parse(r.state) : null;
+    if (st && st.phase && st.phase !== 'lobby') {
+      if (me.host) { S = st; ver = r.ver; lastEv = S.evId; showGame(); startHostLoops(); }
+      else { showGame(); startClientLoops(); }
+    } else enterWait(r, r.name);
+  }).catch(function (e) { busy(false); $('homeErr').textContent = '連線失敗：' + e; });
+};
+function enterWait(r, n) {
+  me = { name: n, code: r.code, pid: r.pid, host: r.host, solo: false };
+  store('room', { code: r.code, pid: r.pid });
+  lobbyPlayers = r.players || [];
+  $('homeCard').classList.add('hidden'); $('waitCard').classList.remove('hidden');
+  $('waitCode').textContent = r.code;
+  $('btnStart').classList.toggle('hidden', !me.host);
+  if (me.host) lobbyOpt = { mode: $('modeSel').value, teams: {} };
+  $('waitNote').textContent = me.host ? '人到齊後按開始（最多 4 人，不足由機器人補滿）。你是房主：遊戲期間請不要關螢幕或切到其他 App。' : '等待房主開始遊戲…';
+  renderWait();
+  if (me.host) startHostLoops(); else startClientLoops();
+}
+function teamOfLobby(i, p) { var t = lobbyOpt.teams && lobbyOpt.teams[p.pid]; return t === 0 || t === 1 ? t : i % 2; }
+function renderWait() {
+  var mo = modeOf(lobbyOpt.mode);
+  $('waitMode').textContent = mo.mode === 'team' ? '模式：2v2 合作・隊友' + (mo.layout === 'diag' ? '對角' : '相鄰') + (me.host ? '（可以在首頁改）' : '') : '模式：混戰（各自為戰）';
+  if (mo.mode === 'team') {
+    var cols = [[], []];
+    lobbyPlayers.forEach(function (p, i) { cols[teamOfLobby(i, p)].push('<button class="tpl" data-pid="' + esc(p.pid) + '"' + (me.host ? '' : ' disabled') + '><span style="color:' + SEAT[i] + '">■</span> ' + (i === 0 ? '👑 ' : '') + esc(p.name) + (p.pid === me.pid ? '（你）' : '') + '</button>'); });
+    [0, 1].forEach(function (t) { while (cols[t].length < 2) cols[t].push('<div class="tpl bot">🤖 機器人補位</div>'); });
+    $('waitList').innerHTML = '<div class="tcols">' + ['甲隊', '乙隊'].map(function (nm, t) { return '<div class="tcol"><b>' + nm + '</b>' + cols[t].slice(0, Math.max(2, cols[t].length)).join('') + '</div>'; }).join('') + '</div>' +
+      (me.host ? '<div class="note">點名字換到另一隊；每隊 2 人，人不夠由機器人補。</div>' : '');
+    return;
+  }
+  var bots = Math.max(0, 4 - lobbyPlayers.length);
+  $('waitList').innerHTML = lobbyPlayers.map(function (p, i) {
+    return '<div><span><span style="color:' + SEAT[i] + '">■</span> ' + (i === 0 ? '👑 ' : '') + esc(p.name) + (p.pid === me.pid ? '（你）' : '') + '</span><span>' + (i + 1) + '/4</span></div>';
+  }).join('') + (bots ? '<div style="opacity:.5"><span>🤖 機器人 ×' + bots + '</span><span>補位</span></div>' : '');
+}
+$('btnStart').onclick = function () { startGame(lobbyPlayers); };
+$('waitList').addEventListener('click', function (e) {
+  var b = e.target.closest('button.tpl'); if (!b || !me.host || S) return;
+  var pid = b.getAttribute('data-pid'), i = lobbyPlayers.findIndex(function (p) { return p.pid === pid; }); if (i < 0) return;
+  var cur = teamOfLobby(i, lobbyPlayers[i]), other = 1 - cur, n = lobbyPlayers.filter(function (p, k) { return teamOfLobby(k, p) === other; }).length;
+  if (n >= 2) { var sw = lobbyPlayers.findIndex(function (p, k) { return teamOfLobby(k, p) === other; }); lobbyOpt.teams[lobbyPlayers[sw].pid] = cur; }   // 那隊滿了就互換
+  lobbyOpt.teams[pid] = other; renderWait();
+});
+$('btnLeave').onclick = function () { if (me.code) run('leaveRoom', me.code, me.pid).catch(function () {}); goHome(); };
+// ---------- 第 10 版：玩法說明＝6 張圖卡（看圖就懂，數字收在最後的「詳細數值」） ----------
+IMG.t1 = sprite(SPR.t1, { D: '#8c5e34', d: '#6b4423', t: '#b0804a' });
+IMG.t1c = SEAT.map(function (col) { return sprite(SPR.t1, { D: col, d: '#6b4423', t: '#b0804a' }); });
+function pic(c, w) { return '<img src="' + c.toDataURL() + '" style="width:' + w + 'px;height:' + Math.round(w * c.height / c.width) + 'px">'; }
+function tileBox(bg, inner, border) { return '<div class="tile" style="background:' + bg + ';' + (border || '') + '">' + inner + '</div>'; }
+var helpAt = 0, helpMore = false;
+var HELP = [
+  function () { return { t: '搶地盤，打下主城！', s: '打下全部主城，或 20 分鐘後地最多就贏',
+    p: '<div style="display:grid;grid-template-columns:repeat(3,auto);gap:4px;align-items:center;justify-items:center">' + pic(IMG.castleBy[0], 70) + '<span></span>' + pic(IMG.castleBy[1], 70) + '<span></span><span class="ar" style="font-size:40px">⚔️</span><span></span>' + pic(IMG.castleBy[3], 70) + '<span></span>' + pic(IMG.castleBy[2], 70) + '</div>' }; },
+  function () { return { t: '主城招兵', s: '',
+    p: '<div style="display:flex;flex-direction:column;align-items:center;gap:14px">' +
+      '<div style="display:flex;align-items:center;gap:10px">' + pic(IMG.castleBy[0], 84) + '<span class="ar">→</span><span style="font-size:40px">⏳</span><span class="ar">→</span><div class="cap">' + pic(IMG.man[0], 60) + '10 人一隊</div></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;color:var(--sub);font-weight:700">這裡也能招：' +
+        '<div class="cap">' + tileBox('#c8b98f', pic(IMG.ruin, 44), 'width:52px;height:52px') + '遺蹟</div>' +
+        '<div class="cap">' + tileBox('#93b55a', pic(IMG.t3[0], 34), 'width:52px;height:52px') + '箭樓</div></div></div>' }; },
+  function () { return { t: '勾隊伍 → 點目標', s: '',
+    p: '<div style="display:grid;grid-template-columns:auto auto;gap:6px 14px;align-items:center;justify-items:start;font-weight:800;font-size:16px">' +
+       tileBox('#93b55a', '', 'width:52px;height:52px;outline:3px solid #fff;box-shadow:inset 0 0 0 4px ' + SEAT[0]) + '<span>① 點自己的地</span>' +
+       '<span class="ar" style="justify-self:center">↓</span><span></span>' +
+       '<div class="tile" style="background:#b5562c;width:76px;height:44px">☑ 第1隊</div><span>② 勾要出動的隊伍</span>' +
+       '<span class="ar" style="justify-self:center">↓</span><span></span>' +
+       tileBox('#93b55a', '', 'width:52px;height:52px;outline:3px dashed #fff;outline-offset:-6px') + '<span>③ 點虛線框的格子</span></div>' }; },
+  function () { return { t: '哨塔幫你守地', s: '用鐵 ⛏ 升級；箭樓還能招兵',
+    p: [[IMG.t1c[0], '擋 6 人'], [IMG.t2c[0], '擋 13 人'], [IMG.t3[0], '擋 19 人']].map(function (x, k) { return (k ? '<span class="ar">→</span>' : '') + '<div class="cap">' + tileBox('#d7b98a', pic(x[0], 46)) + x[1] + '</div>'; }).join('') }; },
+  function () { return { t: '越多越好的地', s: '麥穗產糧 🌾，石頭產鐵 ⛏',
+    p: '<div style="display:grid;grid-template-columns:repeat(3,auto);gap:10px">' + [1, 2, 3].map(function (lv) { return tileBox('#c9a45e', pic(IMG.f[lv], 56)); }).join('') + [1, 2, 3].map(function (lv) { return tileBox('#93b55a', pic(IMG.m[lv], 56)); }).join('') +
+       '<b style="color:var(--sub)">少</b><b class="ar" style="font-size:20px">→</b><b style="color:var(--gold)">多</b></div>' }; },
+  function () {
+    var more = helpMore ? '<table class="htab">' +
+      '<tr><td>招一隊</td><td>🌾' + E.COST.rec + '・' + E.TRAIN + ' 秒</td></tr>' +
+      '<tr><td>招精兵</td><td>🌾' + E.COST.recE.food + ' ⛏' + E.COST.recE.iron + '・' + E.TRAIN_E + ' 秒</td></tr>' +
+      '<tr><td>補兵（每人）</td><td>🌾' + E.COST.fill + '（精兵 🌾' + E.COST.fillE + '）</td></tr>' +
+      '<tr><td>哨塔升級</td><td>⛏' + E.COST.sentry[2] + ' → ⛏' + E.COST.sentry[3] + '</td></tr>' +
+      '<tr><td>城牆 Lv1–3</td><td>⛏' + E.COST.wall.join(' ／ ') + '</td></tr>' +
+      '<tr><td>換遺蹟 buff</td><td>🌾' + E.COST.buff.food + ' ⛏' + E.COST.buff.iron + '</td></tr>' +
+      '<tr><td>農田 Lv1–3</td><td>🌾' + [1, 2, 3].map(function (l) { return E.LAND.f[l].food; }).join(' ／ ') + ' 每秒</td></tr>' +
+      '<tr><td>礦山 Lv1–3</td><td>⛏' + [1, 2, 3].map(function (l) { return E.LAND.m[l].iron; }).join(' ／ ') + ' 每秒</td></tr>' +
+      '<tr><td>隊伍上限</td><td>2＋每 3 塊地 1 隊＋每個遺蹟 ' + E.RUIN_CAP + ' 隊</td></tr>' +
+      '<tr><td>分數</td><td>每塊地 1 分、遺蹟 4 分</td></tr></table>' : '';
+    return { t: '搶遺蹟、打野怪', s: '',
+      p: '<div style="display:grid;grid-template-columns:auto auto 150px;gap:14px 10px;align-items:center;justify-items:center">' +
+        tileBox('#c8b98f', pic(IMG.ruin, 54)) + '<span class="ar">→</span><div class="cap"><div>' + ['atk', 'spd', 'food'].map(buffMini).join('') + '</div>選一個 buff</div>' +
+        tileBox('#4f7a35', pic(IMG.wild, 54)) + '<span class="ar">→</span><div class="cap">' + pic(IMG.manE[0], 48) + '⭐ 精兵（更耐打）</div></div>' +
+        '<button class="btn" id="hMore" style="padding:6px 12px;font-size:14px;margin-top:6px">📋 ' + (helpMore ? '收起詳細數值' : '詳細數值') + '</button>' + more };
+  }
+];
+function renderHelp() {
+  var c = HELP[helpAt]();
+  $('hcard').innerHTML = '<h2>' + c.t + '</h2><div class="hpic">' + c.p + '</div><div class="sub">' + (c.s || '') + '</div>';
+  $('hdots').innerHTML = HELP.map(function (_, k) { return '<i class="' + (k === helpAt ? 'on' : '') + '"></i>'; }).join('');
+  $('hPrev').disabled = helpAt === 0;
+  $('hNext').textContent = helpAt === HELP.length - 1 ? '開始玩！' : '下一張 →';
+  var m = $('hMore'); if (m) m.onclick = function () { helpMore = !helpMore; renderHelp(); };
+}
+function openHelp() { helpAt = 0; helpMore = false; renderHelp(); $('help').classList.remove('hidden'); }
+$('btnHelp1').onclick = $('btnHelp2').onclick = openHelp;
+$('btnHelpClose').onclick = function () { $('help').classList.add('hidden'); };
+$('hPrev').onclick = function () { if (helpAt > 0) { helpAt--; renderHelp(); } };
+$('hNext').onclick = function () { if (helpAt < HELP.length - 1) { helpAt++; renderHelp(); } else $('help').classList.add('hidden'); };
+(function () {   // 左右滑動翻頁
+  var x0 = null;
+  $('hcard').addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  $('hcard').addEventListener('touchend', function (e) {
+    if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (dx < -40) $('hNext').onclick(); else if (dx > 40) $('hPrev').onclick();
+  });
+})();
+
+function goHome() {
+  sess++;
+  loops.forEach(function (id) { clearInterval(id); });
+  unstore('room');
+  ['game', 'endScr', 'banner', 'waitCard', 'buffPick', 'pauseOv'].forEach(function (id) { $(id).classList.add('hidden'); });
+  document.body.classList.remove('paused');
+  buffMode = null; buffSeen = {};
+  resetVars();
+  $('lobby').classList.remove('hidden'); $('homeCard').classList.remove('hidden');
+  showResume(); busy(false);
+}
+$('btnEndHome').onclick = goHome;
+$('btnStay').onclick = function () { $('endScr').classList.add('hidden'); };
+
+// ---------- 房主 ----------
+function startGame(players) {
+  var mo = modeOf(me.solo ? $('modeSel').value : lobbyOpt.mode);
+  S = E.newGame(players.map(function (p, i) { return { pid: p.pid, name: p.name, team: me.solo ? 0 : teamOfLobby(i, p) }; }), (Date.now() % 1e9) | 0, $('diffSel').value, mo);
+  lastEv = S.evId;
+  showGame(); startSim();
+}
+var simLast = 0, botAcc = 0;
+function startSim() {
+  if (running) return;
+  running = true; simLast = performance.now();
+  loops.push(setInterval(function () {
+    if (!S) return;
+    var n = performance.now(), el = (n - simLast) / 1000;
+    if (S.paused) { simLast = n; onState(); return; }   // 暫停：時間不走、電腦不動
+    var used = E.advance(S, el + 0.0001);
+    simLast += used * 1000;
+    if (n - simLast > 8000) simLast = n;
+    botAcc += used;
+    if (botAcc >= 1) { botAcc = 0; S.players.forEach(function (p) { if (!p.human || !p.online) E.botThink(S, p); }); }
+    onState();
+  }, 100));
+  requestWake();
+}
+function slim(k, v) {
+  if (typeof v === 'number' && k !== 'seed' && k !== 'id' && k !== 'evId' && k !== 'nid') return Math.round(v * 100) / 100;
+  return v;
+}
+function startHostLoops() {
+  if (S) startSim();
+  if (me.solo) return;
+  var my = sess;
+  loops.push(setInterval(function () {
+    if (my !== sess || hostBusy >= 2) return;
+    hostBusy++;
+    var st = S ? S : { phase: 'lobby', players: lobbyPlayers, opt: lobbyOpt };
+    ver++;
+    run('hostSync', me.code, me.pid, ver, JSON.stringify(st, slim), !!S).then(function (r) {
+      hostBusy--;
+      if (my !== sess) return;
+      if (r.error) { banner(r.error); return; }
+      hideBanner();
+      if (!S) { lobbyPlayers = r.players; renderWait(); return; }
+      Object.keys(r.acts).forEach(function (pid) {
+        var done = S.acks[pid] || 0;
+        r.acts[pid].forEach(function (x) {
+          if (x.seq <= done) return;
+          var err = E.act(S, pid, x.a);
+          var p = E.P(S, pid);
+          if (err && p) { S.ev.push({ id: ++S.evId, type: 'err', to: p.seat, text: err }); if (S.ev.length > 30) S.ev.shift(); }
+          done = x.seq;
+        });
+        S.acks[pid] = done;
+      });
+      // 斷線 15 秒 → 機器人代打
+      S.players.forEach(function (p) {
+        if (!p.human || p.pid === me.pid) return;
+        var on = r.now - (r.seen[p.pid] || 0) < 15000;
+        if (on !== p.online) { p.online = on; toast(p.name + (on ? ' 回來了' : ' 斷線了，暫時由機器人代打')); }
+      });
+    }).catch(function () { hostBusy--; if (my === sess) banner('連線不穩，重試中…'); });
+  }, 400));
+}
+
+// ---------- 加入的玩家 ----------
+function startClientLoops() {
+  var my = sess;
+  function fire() {
+    if (my !== sess) return;
+    var acts = pending.length ? JSON.stringify(pending) : '';
+    run('clientSync', me.code, me.pid, lastVer, acts).then(function (r) {
+      if (my !== sess) return;
+      if (r.state && r.ver > lastVer) {
+        lastVer = r.ver; lastRecv = Date.now();
+        var st = JSON.parse(r.state);
+        if (st.phase === 'lobby') { lobbyPlayers = st.players; if (st.opt) lobbyOpt = st.opt; renderWait(); }
+        else {
+          var first = !S; S = st; recvAt = performance.now();
+          if (first) lastEv = S.evId;
+          var acked = S.acks[me.pid] || 0;
+          pending = pending.filter(function (x) { return x.seq > acked; });
+          // 房主還沒處理的操作，重新套用到新狀態上，畫面才不會跳回去
+          pending.forEach(function (x) { var n = S.ev.length, id = S.evId; E.act(S, me.pid, x.a); S.ev.length = n; S.evId = id; });
+          if (first) showGame();
+          onState();
+        }
+      }
+      setTimeout(fire, 30);
+    }).catch(function () { setTimeout(fire, 1000); });
+  }
+  fire(); setTimeout(fire, 180);
+  loops.push(setInterval(function () {
+    if (my !== sess) return;
+    if (S && S.phase !== 'end' && Date.now() - lastRecv > 8000) banner('等待房主回應中…（房主可能關了螢幕）'); else hideBanner();
+  }, 500));
+}
+function send(a) {
+  if (!S) return '連線中';
+  if (me.host) { var err = E.act(S, me.pid, a); if (err) toast(err, 'bad'); onState(); return err; }
+  var n = S.ev.length, id = S.evId, err2 = E.act(S, me.pid, a);   // 先在自己畫面試做；失敗就不送出
+  S.ev.length = n; S.evId = id;
+  if (err2) { toast(err2, 'bad'); return err2; }
+  seq++; pending.push({ seq: seq, a: a });
+  if (pending.length > 40) pending.shift();
+  onState();
+  return null;
+}
+function banner(t) { $('banner').textContent = t; $('banner').classList.remove('hidden'); }
+function hideBanner() { $('banner').classList.add('hidden'); }
+function requestWake() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {} }
+document.addEventListener('visibilitychange', function () { if (!document.hidden && running) requestWake(); });
+
+// ---------- 遊戲畫面 ----------
+var cv = $('cv'), ctx = cv.getContext('2d'), bg = document.createElement('canvas');
+// 第 7 版：電腦／平板橫放（寬 ≥ 900、高 ≥ 500）→ 地圖在左、面板在右，地圖自動放大到整張剛好塞滿
+function isWide() { var w = window.innerWidth, h = window.innerHeight; return (w >= 900 && h >= 500) || (w > h && w >= 640); }   // 手機橫放也用左右兩欄，不然地圖會被面板擠光
+var wideMode = null, zoomTouched = false;
+function applyWide() {
+  var w = isWide();
+  if (w !== wideMode) {
+    wideMode = w; document.body.classList.toggle('wide', w);
+    if (!zoomTouched) zoomFit = w;   // 電腦版預設「整張地圖」，手機版預設放大
+  }
+}
+function setPh() { document.documentElement.style.setProperty('--ph', wideMode ? '0px' : $('panel').offsetHeight + 'px'); }
+function showGame() {
+  $('lobby').classList.add('hidden'); $('game').classList.remove('hidden');
+  applyWide(); layout();
+  $('btnPause').classList.toggle('hidden', !me.host);
+  if (me.host && !me.solo) toast('你是房主：遊戲期間請不要關螢幕或切換 App');
+  if (!rafOn) { rafOn = true; requestAnimationFrame(frame); }
+}
+function layout() {
+  var w = $('mapWrap').clientWidth || window.innerWidth, h = $('mapWrap').clientHeight || window.innerHeight;
+  var fit = Math.max(18, Math.floor((Math.min(w, h) - 12) / E.N));
+  if (wideMode) cs = zoomFit ? fit : Math.max(64, Math.round(fit * 1.6));
+  else cs = zoomFit ? Math.max(18, Math.floor((w - 12) / E.N)) : 46;
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  var px = cs * E.N;
+  cv.style.width = px + 'px'; cv.style.height = px + 'px';
+  cv.width = Math.round(px * dpr); cv.height = Math.round(px * dpr);
+  bgKey = '';
+  setPh();
+}
+window.addEventListener('resize', function () { if (S) { applyWide(); layout(); renderPanel(true); } });
+// 地圖區大小一變（例如上方名牌第一次畫出來）就重新計算格子大小
+var lastWrapSize = '';
+function checkWrap() {
+  if (!S || $('game').classList.contains('hidden')) return;
+  var w = $('mapWrap'), k = w.clientWidth + 'x' + w.clientHeight + (wideMode ? 'w' : '');
+  if (k !== lastWrapSize) { lastWrapSize = k; if (wideMode || zoomFit) layout(); }
+}
+setInterval(checkWrap, 300);
+$('btnZoom').onclick = function () {
+  var wrap = $('mapWrap'), fx = (wrap.scrollLeft + wrap.clientWidth / 2) / (cs * E.N), fy = (wrap.scrollTop + wrap.clientHeight / 2) / (cs * E.N);
+  zoomFit = !zoomFit; zoomTouched = true; layout();
+  wrap.scrollLeft = fx * cs * E.N - wrap.clientWidth / 2; wrap.scrollTop = fy * cs * E.N - wrap.clientHeight / 2;
+};
+function centerOn(i) {
+  var wrap = $('mapWrap'), r = E.rc(i);
+  wrap.scrollLeft = (r[1] + 0.5) * cs - wrap.clientWidth / 2 + 6;
+  wrap.scrollTop = (r[0] + 0.5) * cs - wrap.clientHeight / 2 + 6;
+}
+$('btnHome').onclick = function () { var p = myP(); if (p) { centerOn(p.cap); if (S.tiles[p.cap].o === p.seat) { sel = p.cap; aim = 0; pickOn = {}; renderPanel(true); } } };
+
+function tileBase(t, r, c) {
+  var h = ((r * 7 + c * 13) % 5);
+  if (t === 'f') return ['#c9a45e', '#c39d57'][h & 1];
+  if (t === 'm') return ['#93b55a', '#8db055'][h & 1];
+  if (t === 'r') return ['#c8b98f', '#c1b286'][h & 1];
+  if (t === 'w') return ['#4f7a35', '#4a7432'][h & 1];
+  if (t === 'x') return ['#7d9a52', '#77944d'][h & 1];
+  return ['#93b55a', '#8db055', '#98ba5f'][h % 3];
+}
+function drawBg() {
+  var key = cs + '|' + S.tiles.map(function (T) { return T.t + (T.lv || '') + (T.o >= 0 ? (T.t === 'c' ? T.o : 'o') + (bigWalled(T) ? 'w' : '') : ''); }).join('');
+  if (key === bgKey) return;
+  bgKey = key;
+  bg.width = cv.width; bg.height = cv.height;
+  var x = bg.getContext('2d'); x.imageSmoothingEnabled = false;
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  S.tiles.forEach(function (T, i) {
+    var r = Math.floor(i / E.N), c = i % E.N, X = c * cs, Y = r * cs;
+    x.fillStyle = tileBase(T.t, r, c); x.fillRect(X, Y, cs, cs);
+    // 草地小點
+    x.fillStyle = 'rgba(0,0,0,.08)';
+    for (var k = 0; k < 3; k++) { var px = ((r * 31 + c * 17 + k * 11) % 9) / 9, py = ((r * 13 + c * 29 + k * 7) % 9) / 9; x.fillRect(X + px * cs, Y + py * cs, Math.max(2, cs / 14), Math.max(2, cs / 14)); }
+    var im = { c: T.o >= 0 ? IMG.castleBy[T.o] : IMG.castle, x: IMG.mtn, r: IMG.ruin, w: IMG.wild, e: IMG.elite }[T.t];
+    if ((T.t === 'f' || T.t === 'm') && T.o < 0) im = IMG[T.t][T.lv];
+    if (im && !bigWalled(T)) { var s = cs * 0.86; x.drawImage(im, X + (cs - s) / 2, Y + (cs - s) / 2, s, s); }   // 有城牆的主城／遺蹟／精兵營改在前景縮小畫
+    x.strokeStyle = 'rgba(0,0,0,.12)'; x.lineWidth = 1; x.strokeRect(X + 0.5, Y + 0.5, cs - 1, cs - 1);
+  });
+}
+function dispTime() {
+  if (!S) return 0;
+  if (me.host || S.phase === 'end' || S.paused) return S.time;
+  return S.time + Math.min(1.2, (performance.now() - recvAt) / 1000);
+}
+var rafOn = false, lastDraw = 0;
+function frame(now) {
+  if (!S || $('game').classList.contains('hidden')) { rafOn = false; return; }
+  requestAnimationFrame(frame);
+  if (now - lastDraw < 33) return;
+  lastDraw = now;
+  draw(now);
+}
+function txt(x, s, X, Y, col, size, align) {
+  x.font = '800 ' + size + 'px -apple-system,"PingFang TC",sans-serif';
+  x.textAlign = align || 'right'; x.textBaseline = 'alphabetic';
+  x.lineWidth = 3; x.strokeStyle = 'rgba(0,0,0,.85)'; x.strokeText(s, X, Y);
+  x.fillStyle = col; x.fillText(s, X, Y);
+}
+// ---------- 第 15 版：城牆、駐軍、對決牌、血條 ----------
+function canUpHere(T, i) {   // 鐵夠升哨塔或城牆，而且是主城或和別人相鄰的前線
+  var p = myP(); if (!p || S.phase === 'end') return false;
+  var ok = (T.sl && T.sl < 3 && p.iron >= E.COST.sentry[T.sl + 1]) || (T.w < 3 && p.iron >= E.COST.wall[T.w]);
+  if (!ok) return false;
+  if (E.isCapital(S, i)) return true;
+  return E.nb4(i).some(function (j) { var U = S.tiles[j]; return U.o >= 0 && !E.friendly(S, U.o, T.o); });
+}
+function bigWalled(T) { return T.o >= 0 && T.w > 0 && (T.t === 'c' || T.t === 'r' || T.t === 'e'); }
+function drawWall(x, X, Y, lv) {   // Lv1 薄牆、Lv2 加垛口、Lv3 加厚＋四角塔
+  var o = Math.max(2, cs / 14), t = cs * [0, 0.06, 0.085, 0.11][lv], L = cs - 2 * o;
+  var stone = '#d9cfbb', dark = '#2b2118', mid = '#a89c86';
+  x.fillStyle = dark;
+  x.fillRect(X + o - 1, Y + o - 1, L + 2, t + 2); x.fillRect(X + o - 1, Y + cs - o - t - 1, L + 2, t + 2);
+  x.fillRect(X + o - 1, Y + o - 1, t + 2, L + 2); x.fillRect(X + cs - o - t - 1, Y + o - 1, t + 2, L + 2);
+  x.fillStyle = stone;
+  x.fillRect(X + o, Y + o, L, t); x.fillRect(X + o, Y + cs - o - t, L, t); x.fillRect(X + o, Y + o, t, L); x.fillRect(X + cs - o - t, Y + o, t, L);
+  x.fillStyle = mid; var step = Math.max(4, cs / 7), d, k, m, p;
+  for (d = step / 2; d < L; d += step) { x.fillRect(X + o + d, Y + o, 1, t); x.fillRect(X + o + d, Y + cs - o - t, 1, t); x.fillRect(X + o, Y + o + d, t, 1); x.fillRect(X + cs - o - t, Y + o + d, t, 1); }
+  if (lv >= 2) {
+    m = Math.max(2, cs * 0.045);
+    [dark, stone].forEach(function (col, pass) {
+      var e = pass ? 0 : 1; x.fillStyle = col;
+      for (k = 1; k < 5; k++) { p = o + L * k / 5 - m / 2;
+        x.fillRect(X + p - e, Y + o + t - e, m + 2 * e, m + 2 * e); x.fillRect(X + p - e, Y + cs - o - t - m - e, m + 2 * e, m + 2 * e);
+        x.fillRect(X + o + t - e, Y + p - e, m + 2 * e, m + 2 * e); x.fillRect(X + cs - o - t - m - e, Y + p - e, m + 2 * e, m + 2 * e); }
+    });
+  }
+  if (lv >= 3) {
+    var q = cs * 0.2;
+    [[X + o, Y + o], [X + cs - o - q, Y + o], [X + o, Y + cs - o - q], [X + cs - o - q, Y + cs - o - q]].forEach(function (c) {
+      x.fillStyle = dark; x.fillRect(c[0] - 1, c[1] - 1, q + 2, q + 2); x.fillStyle = stone; x.fillRect(c[0], c[1], q, q);
+      x.fillStyle = mid; x.fillRect(c[0] + q * 0.3, c[1] + q * 0.3, q * 0.4, q * 0.4);
+    });
+  }
+}
+var ICO_SW = sprite(['w.....w', '.w...w.', '..w.w..', '...w...', '..w.w..', 'ww...ww', 'w.....w'], { w: '#ffffff' });
+var ICO_SH = sprite(['wwwwwww', 'w.....w', 'w.....w', 'w.....w', '.w...w.', '..w.w..', '...w...'], { w: '#ffffff' });
+function pillTxt(x, ico, num, px, py, h, align, wmax) {   // 圖示和數字分開畫，中間不會有描邊黑線
+  var f = Math.max(8, Math.round(h * 0.82)), isz = Math.round(h * 0.62);
+  x.font = '800 ' + f + 'px -apple-system,"PingFang TC",sans-serif'; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  var tw = x.measureText(num).width, total = isz + 2 + tw, sx = align === 'right' ? px + wmax - 3 - total : px + 3;
+  x.drawImage(ico, sx, py + (h - isz) / 2, isz, isz);
+  x.lineWidth = 3; x.lineJoin = 'round'; x.strokeStyle = 'rgba(0,0,0,.85)'; x.strokeText(num, sx + isz + 2, py + h * 0.84);
+  x.fillStyle = '#fff'; x.fillText(num, sx + isz + 2, py + h * 0.84);
+}
+function pill(x, col, px, py, w, h) { x.fillStyle = col; x.fillRect(px, py, w, h); x.strokeStyle = '#000'; x.lineWidth = 1; x.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1); }
+function neutralMax(T) { return T.t === 'f' || T.t === 'm' ? [0, 5, 16, 30][T.lv] : T.t === 'w' ? 16 : T.t === 'r' ? 36 : 0; }
+function drawTroops(x, T, i, X, Y, fs, blink) {
+  var n = E.menOf(T.q);
+  if (T.t === 'x') return;
+  if (!T.s) {   // 平常：左邊上下擺小兵（上精兵、下一般兵）＋隊數牌，右下總人數
+    if (n <= 0 && !T.al) return;
+    if (T.o < 0) { x.globalAlpha = 0.6; txt(x, String(n), X + cs - 3, Y + cs - 4, '#eee', Math.max(8, Math.round(fs * 0.8))); x.globalAlpha = 1; return; }
+    var ne = 0, nn = 0; T.q.forEach(function (q) { if (q.e) ne++; else nn++; });
+    var ms = cs * 0.4, f6 = Math.max(8, Math.round(cs * 0.17)), rr = cs * 0.1, bottom = Y + cs * 0.98;
+    [[nn, IMG.man[T.o], '#fff'], [ne, IMG.manE[T.o], '#ffc93c']].forEach(function (g) {
+      if (!g[0]) return;
+      var im = g[1], hh = ms * im.height / im.width, px = X + cs * 0.01, py = bottom - hh, cx = px + ms * 0.92, cy = py + hh * 0.3;
+      x.drawImage(im, px, py, ms, hh);
+      x.beginPath(); x.arc(cx, cy, rr + 1.5, 0, 7); x.fillStyle = '#2b2118'; x.fill();
+      x.beginPath(); x.arc(cx, cy, rr, 0, 7); x.fillStyle = g[2]; x.fill();
+      x.font = '900 ' + f6 + 'px -apple-system,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = '#2b2118'; x.fillText(String(g[0]), cx, cy + 1);
+      x.textBaseline = 'alphabetic';
+      bottom = py - cs * 0.01;
+    });
+    if (n > 0) txt(x, String(n), X + cs - 3, Y + cs - 4, '#fff', fs);
+    if (T.al) T.al.forEach(function (g, k) {   // 第 19 版：援軍標示（援軍主人的顏色＋隊數），左上角
+      var bw = cs * 0.42, bh = Math.max(9, cs * 0.2), bx = X + 2, by = Y + 2 + k * (bh + 1);
+      x.fillStyle = '#000'; x.fillRect(bx - 1, by - 1, bw + 2, bh + 2); x.fillStyle = SEAT[g.o]; x.fillRect(bx, by, bw, bh);
+      txt(x, '援' + g.q.length, bx + bw / 2, by + bh * 0.82, '#fff', Math.max(8, Math.round(bh * 0.8)), 'center');
+    });
+    if (T.tr) txt(x, '⏳', X + cs - 3, Y + cs * 0.38, '#fff', Math.max(8, Math.round(fs * 0.7)));
+    return;
+  }
+  // 打仗中：不畫兵，左上進攻方色牌（多方橫排）、右下防守方色牌，閃紅框
+  var f3 = Math.max(9, Math.round(cs * 0.24)), h = f3 * 1.15, ns = T.s.length;
+  x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(X, Y, cs, cs);
+  T.s.forEach(function (s, k) {
+    var w = ns > 1 ? (cs - 4 - (ns - 1) * 2) / ns : cs * 0.5, px = X + 2 + k * (w + 2), hh = h * (ns > 1 ? 0.85 : 1);
+    pill(x, SEAT[s.o], px, Y + 2, w, hh); pillTxt(x, ICO_SW, String(E.menOf(s.q)), px, Y + 2, hh, 'left', w);
+  });
+  var w2 = cs * 0.5, qx = X + cs - w2 - 2, qy = Y + cs - h - 2;
+  pill(x, T.o >= 0 ? SEAT[T.o] : '#777', qx, qy, w2, h); pillTxt(x, ICO_SH, String(E.menOf(E.defQ(T))), qx, qy, h, 'right', w2);
+  x.strokeStyle = blink ? '#fff' : '#ff6b5b'; x.lineWidth = 2; x.strokeRect(X + 1, Y + 1, cs - 2, cs - 2);
+}
+function lifeBar(x, T, i, X, Y) {   // 自己的地＝哨塔血量；野怪、遺蹟＝守軍剩多少；農田、礦山（無主）不顯示
+  var ratio = -1;
+  if (T.o >= 0) { var mx = E.sentryMax(S, T, i); if (mx && (T.sh < mx - 0.01 || T.s)) ratio = T.sh / mx; }
+  else if (T.t === 'w' || T.t === 'r') { var nm = neutralMax(T), n = E.menOf(T.q); if (nm && (n < nm || T.s)) ratio = n / nm; }
+  if (ratio < 0) return;
+  ratio = Math.max(0, Math.min(1, ratio));
+  var col = ratio > 0.4 ? '#7fd16b' : '#ff6b5b';
+  if (T.s) {   // 打仗中：大血條放中間、最上層
+    var bw = cs * 0.84, h = Math.max(6, cs * 0.14), bx = X + (cs - bw) / 2, by = Y + cs * 0.5;
+    x.fillStyle = '#000'; x.fillRect(bx - 1.5, by - 1.5, bw + 3, h + 3);
+    x.fillStyle = '#3a2f23'; x.fillRect(bx, by, bw, h);
+    x.fillStyle = col; x.fillRect(bx, by, bw * ratio, h);
+    x.fillStyle = 'rgba(255,255,255,.35)'; x.fillRect(bx, by, bw * ratio, h * 0.35);
+  } else {
+    var bw2 = cs * 0.5, h2 = Math.max(3, cs * 0.07), by2 = Y + cs * 0.68;
+    x.fillStyle = 'rgba(0,0,0,.6)'; x.fillRect(X + (cs - bw2) / 2, by2, bw2, h2);
+    x.fillStyle = col; x.fillRect(X + (cs - bw2) / 2, by2, bw2 * ratio, h2);
+  }
+}
+function draw(now) {
+  drawBg();
+  var x = ctx, N = E.N, me0 = mySeat(), t = dispTime(), blink = Math.floor(now / 300) % 2;
+  x.setTransform(1, 0, 0, 1, 0, 0);
+  x.drawImage(bg, 0, 0);
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  x.imageSmoothingEnabled = false;
+  var fs = Math.max(9, Math.round(cs * 0.27));
+  S.tiles.forEach(function (T, i) {
+    var r = Math.floor(i / N), c = i % N, X = c * cs, Y = r * cs;
+    if (T.o >= 0) {
+      x.fillStyle = rgba(SEAT[T.o], 0.32); x.fillRect(X, Y, cs, cs);
+      // 領土邊界
+      x.fillStyle = SEAT[T.o];
+      var bw = Math.max(2, cs / 14);
+      if (r === 0 || S.tiles[i - N].o !== T.o) x.fillRect(X, Y, cs, bw);
+      if (r === N - 1 || S.tiles[i + N].o !== T.o) x.fillRect(X, Y + cs - bw, cs, bw);
+      if (c === 0 || S.tiles[i - 1].o !== T.o) x.fillRect(X, Y, bw, cs);
+      if (c === N - 1 || S.tiles[i + 1].o !== T.o) x.fillRect(X + cs - bw, Y, bw, cs);
+    }
+    // 主城旗子
+    /* 第 10 版：旗子已畫在主城圖裡 */
+    // 第 15 版：城牆圍在格子內圈、哨塔畫在正中間（每一級都畫）
+    if (T.w > 0 && T.o >= 0) drawWall(x, X, Y, T.w);
+    if (bigWalled(T)) {   // 第 16 版：主城、遺蹟、精兵營有城牆時，圖示縮小放進城牆裡
+      var bim = { c: IMG.castleBy[T.o], r: IMG.ruin, e: IMG.elite }[T.t], bsz = cs * [0, 0.76, 0.7, 0.62][T.w];
+      x.drawImage(bim, X + (cs - bsz) / 2, Y + (cs - bsz) / 2, bsz, bsz);
+    }
+    if (T.sl && T.o >= 0 && T.t !== 'c' && T.t !== 'r' && T.t !== 'e') {   // 主城、遺蹟、精兵營保留原圖
+      var ti2 = T.sl === 3 ? IMG.t3[T.o] : T.sl === 2 ? IMG.t2c[T.o] : IMG.t1c[T.o], th = cs * 0.58, tw = th * ti2.width / ti2.height;
+      x.drawImage(ti2, X + (cs - tw) / 2, Y + cs * 0.1, tw, th);
+    }
+    drawTroops(x, T, i, X, Y, fs, blink);
+    lifeBar(x, T, i, X, Y);
+    if (T.o === me0 && !T.s && canUpHere(T, i)) {   // 第 17 版：鐵夠升級的前線／主城 → 綠色 ↑
+      var ur = Math.max(5, cs * 0.12), ux = X + cs - ur - 3, uy = Y + ur + 3;
+      x.beginPath(); x.arc(ux, uy, ur + 1.5, 0, 7); x.fillStyle = '#000'; x.fill(); x.beginPath(); x.arc(ux, uy, ur, 0, 7); x.fillStyle = '#7fd16b'; x.fill();
+      x.fillStyle = '#1c1712'; x.beginPath(); x.moveTo(ux, uy - ur * 0.6); x.lineTo(ux + ur * 0.55, uy + ur * 0.05); x.lineTo(ux - ur * 0.55, uy + ur * 0.05); x.fill(); x.fillRect(ux - ur * 0.2, uy, ur * 0.4, ur * 0.55);
+    }
+  });
+  // 第 17 版：湊兵時，被選到的出發地畫黃色虛線
+  Object.keys(gather).forEach(function (k) { var r = Math.floor(k / N), c = k % N; x.setLineDash([3, 3]); x.lineWidth = 2; x.strokeStyle = '#f4c95d'; x.strokeRect(c * cs + 3, r * cs + 3, cs - 6, cs - 6); x.setLineDash([]); });
+  // 可派兵目標
+  if (aim && tgt) {
+    x.setLineDash([4, 3]); x.lineWidth = 2; x.strokeStyle = '#fff';
+    Object.keys(tgt).forEach(function (k) { var r = Math.floor(k / N), c = k % N; x.strokeRect(c * cs + 4, r * cs + 4, cs - 8, cs - 8); });
+    x.setLineDash([]);
+  }
+  if (sel >= 0) {
+    var sr = Math.floor(sel / N), sc = sel % N;
+    x.lineWidth = 3; x.strokeStyle = blink || !aim ? '#fff' : '#ffd166';
+    x.strokeRect(sc * cs + 1.5, sr * cs + 1.5, cs - 3, cs - 3);
+  }
+  // 行軍中的部隊
+  S.armies.forEach(function (a) {
+    var prog = Math.max(0, (t - a.t0) / (a.st || E.STEP)), k = Math.min(a.path.length - 1, Math.floor(prog)), fr = Math.min(1, prog - k);
+    if (k >= a.path.length - 1) { k = a.path.length - 2; fr = 1; }
+    var A = E.rc(a.path[k]), B = E.rc(a.path[k + 1]);
+    var cx = (A[1] + (B[1] - A[1]) * fr + 0.5) * cs, cy = (A[0] + (B[0] - A[0]) * fr + 0.5) * cs;
+    var w = cs * 0.42, h = cs * 0.42;
+    x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.ellipse(cx, cy + h * 0.45, w * 0.45, h * 0.15, 0, 0, 7); x.fill();
+    x.drawImage((a.q.some(function (q) { return q.e; }) ? IMG.manE : IMG.man)[a.o], cx - w / 2, cy - h / 2 + (Math.floor(now / 160) % 2), w, h);
+    txt(x, String(E.menOf(a.q)), cx + w * 0.75, cy - h * 0.2, SEAT[a.o], fs, 'left');
+  });
+}
+
+// ---------- 點地圖 ----------
+cv.addEventListener('click', function (e) {
+  if (!S) return;
+  var b = cv.getBoundingClientRect(), c = Math.floor((e.clientX - b.left) / cs), r = Math.floor((e.clientY - b.top) / cs);
+  if (r < 0 || c < 0 || r >= E.N || c >= E.N) return;
+  onTile(r * E.N + c);
+});
+function myQ(ti) {   // 這格上屬於我的隊：自己的地＝駐軍；隊友的地＝我的援軍（第 19 版）
+  var T = S.tiles[ti], o = mySeat(); if (T.o === o) return T.q;
+  var g = E.alQ(T, o); return g ? g.q : [];
+}
+function picked() {   // 目前勾選要出動的隊
+  if (sel < 0 || !S) return [];
+  return myQ(sel).filter(function (q) { return pickOn[q.i]; });
+}
+function nextSquads(ti, k) { return myQ(ti).slice(0, k).map(function (q) { return q.i; }); }
+function onTile(i) {
+  var o = mySeat();
+  if (aim && sel >= 0) {
+    if (i === sel) { aim = 0; tgt = null; renderPanel(true); return; }
+    if (tgt && tgt[i] !== undefined) {
+      var ids = aimEach ? nextSquads(sel, aimEach) : picked().map(function (q) { return q.i; });
+      var err = send({ t: 'mv', i: sel, j: i, ids: ids });
+      if (!err) {
+        var left = myQ(sel).length;
+        toast('出兵！' + ids.length + ' 隊 → ' + E.tname(S, i) + (aimEach && left ? '（還剩 ' + left + ' 隊）' : ''), 'good');
+        pickOn = {};
+        if (!aimEach || !left) { aim = 0; tgt = null; }
+        else tgt = E.targets(S, o, sel);   // 連續出兵：留在選目標狀態
+      }
+      renderPanel(true); return;
+    }
+    if (S.tiles[i].o === o) { aim = 0; tgt = null; sel = i; pickOn = {}; renderPanel(true); ensureVisible(sel); return; }
+    toast('那裡到不了：只能打和自己土地相鄰的格子', 'bad'); return;
+  }
+  sel = sel === i ? -1 : i; aim = 0; tgt = null; pickOn = {}; gather = {};
+  renderPanel(true); ensureVisible(sel);
+}
+$('panel').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b || b.disabled || !S) return;
+  var a = b.getAttribute('data-a');
+  if (a === 'tab') { tab = b.getAttribute('data-k'); store('tab', tab); }
+  else if (a === 'quick') {   // 快選：1 隊／一半／全部／精兵
+    var qq = sel >= 0 ? myQ(sel) : [], k = b.getAttribute('data-k'), list;
+    if (k === '1') list = qq.slice(0, 1); else if (k === 'half') list = qq.slice(0, Math.max(1, Math.ceil(qq.length / 2)));
+    else if (k === 'e') list = qq.filter(function (q) { return q.e; }); else list = qq;
+    pickOn = {}; list.forEach(function (q) { pickOn[q.i] = 1; });
+  }
+  else if (a === 'each') { aimEach = +b.getAttribute('data-k'); if (!aimEach && !picked().length) aimEach = 1; }
+  else if (a === 'gadd' || a === 'gall') {
+    var src = +b.getAttribute('data-s'), qn = myQ(src).length, cur = gather[src] || 0;
+    gather[src] = a === 'gall' ? (cur === qn ? 0 : qn) : (cur + 1 > qn ? 0 : cur + 1);
+    if (!gather[src]) delete gather[src];
+  }
+  else if (a === 'gogo') {
+    var ok = 0, men0 = 0, errs = [];
+    Object.keys(gather).forEach(function (k2) {
+      k2 = +k2; var ids2 = nextSquads(k2, gather[k2]), m2 = E.menOf(myQ(k2).slice(0, gather[k2]));
+      var e2 = send({ t: 'mv', i: k2, j: sel, ids: ids2 });
+      if (e2) errs.push(e2); else { ok++; men0 += m2; }
+    });
+    gather = {};
+    if (ok) toast((E.ally(S, S.tiles[sel].o, mySeat()) ? '🛡 ' + ok + ' 路援軍出發' : '⚔ ' + ok + ' 路一起出發') + '，共 ' + men0 + ' 人 → ' + E.tname(S, sel), 'good');
+    else if (errs.length) toast(errs[0], 'bad');
+  }
+  else if (a === 'gift') {
+    send({ t: 'gift', to: S.tiles[sel].o, k: b.getAttribute('data-k') });
+  }
+  else if (a === 'all') { var qs = sel >= 0 ? myQ(sel) : [], allOn = qs.length && qs.every(function (q) { return pickOn[q.i]; }); pickOn = {}; if (!allOn) qs.forEach(function (q) { pickOn[q.i] = 1; }); }
+  else if (a === 'sq') { var id = +b.getAttribute('data-id'); if (pickOn[id]) delete pickOn[id]; else pickOn[id] = 1; }
+  else if (a === 'auto') send({ t: 'auto', i: sel, k: b.getAttribute('data-k') });
+  else if (a === 'aim') {
+    aimEach = picked().length ? 0 : 1;   // 沒勾選＝連續出兵，每點一格派 1 隊
+    aim = 1;
+    tgt = E.targets(S, mySeat(), sel);
+    if (!Object.keys(tgt).length) { toast('沒有可以去的地方', 'bad'); aim = 0; tgt = null; }
+  } else if (a === 'cancel') { aim = 0; tgt = null; renderPanel(true); ensureVisible(sel); }
+  else if (a === 'rec') send({ t: 'rec', i: sel, e: b.getAttribute('data-e') ? 1 : 0 });
+  else if (a === 'buffpick') openBuff(sel, false);
+  else if (a === 'buffchg') openBuff(sel, true);
+  else if (a === 'fill') send({ t: 'fill', i: sel });
+  else if (a === 'sup') send({ t: 'sup', i: sel });
+  else if (a === 'wall') send({ t: 'wall', i: sel });
+  renderPanel(true);
+});
+
+// ---------- 每次狀態更新 ----------
+function onState() {
+  if (!S) return;
+  // 事件
+  S.ev.forEach(function (v) {
+    if (v.id <= lastEv) return;
+    lastEv = v.id;
+    var o = mySeat();
+    if (v.to !== -1 && v.to !== o) return;
+    if (v.type === 'err') toast(v.text, 'bad');
+    if (v.type === 'gift') toast('🎁 ' + v.text, 'good');
+  });
+  if (sel >= 0 && aim) {
+    if (!myQ(sel).length || (aimEach ? false : !picked().length)) { aim = 0; tgt = null; }
+    else tgt = E.targets(S, mySeat(), sel);
+  }
+  if (!centered && $('mapWrap').clientWidth) { centered = true; var p = myP(); centerOn(p ? p.cap : E.idx(7, 7)); }
+  renderTop(); renderPanel(); checkBuffPopup(); renderPause();
+  if (S.phase === 'end' && !endShown) { endShown = true; showEnd(); }
+}
+function renderPause() {
+  var on = !!(S && S.paused && S.phase !== 'end');
+  $('pauseOv').classList.toggle('hidden', !on); document.body.classList.toggle('paused', on);
+  $('btnGo').classList.toggle('hidden', !me.host);
+  $('pauseSub').textContent = me.host ? (me.solo ? '時間、行軍、生產都停住了' : '大家都停住了。房主離開或關螢幕會中斷遊戲') : '時間停住了，可以看地圖，等房主按繼續';
+  $('btnPause').textContent = on ? '▶' : '⏸';
+}
+$('btnPause').onclick = function () { if (!me.host || !S || S.phase === 'end') return; S.paused = !S.paused; toast(S.paused ? '⏸ 已暫停' : '▶ 繼續'); onState(); };
+$('btnGo').onclick = function () { if (!me.host || !S) return; S.paused = false; toast('▶ 繼續'); onState(); };
+function fmt(n) { return Math.floor(n); }
+function renderTop() {
+  var p = myP(), o = mySeat();
+  if (p) {
+    var rt = E.rate(S, o);
+    $('vFood').textContent = fmt(p.food); $('vFoodR').textContent = '+' + rt[0].toFixed(1);
+    $('vIron').textContent = fmt(p.iron); $('vIronR').textContent = '+' + rt[1].toFixed(1);
+    $('vPop').textContent = E.squadsOf(S, o); $('vCap').textContent = '/' + E.squadCap(S, o) + ' 隊';
+    $('vPop').style.color = E.squadsOf(S, o) > E.squadCap(S, o) ? 'var(--red)' : '';
+  }
+  var t = dispTime(), el = $('vTime');
+  if (S.phase === 'prep') { el.textContent = '準備 ' + clock(E.PREP - t); el.className = 'time prep'; }
+  else if (S.phase === 'play') { var left = E.PREP + E.GAME - t; el.textContent = '⏱' + clock(left); el.className = 'time' + (left < 60 ? ' hurry' : ''); }
+  else { el.textContent = '結束'; el.className = 'time'; }
+  // 遺蹟獲勝倒數（顯示在資源列，不擋地圖）
+  var rh = '';
+  if ($('vRuin').innerHTML !== rh) $('vRuin').innerHTML = rh;
+  var chip = function (q) {
+    return '<div class="chip' + (q.alive ? '' : ' dead') + (q.seat === o ? ' me' : '') + '" style="border-color:' + SEAT[q.seat] + '"><div class="nm">' +
+      (q.alive ? '' : '💀') + esc(q.name) + (q.human && !q.online ? '📵' : '') + '</div><b>' + (q.alive ? q.land : 0) + '</b> 地' + (q.alive && E.ruinsOf(S, q.seat) ? ' 🏛' + E.ruinsOf(S, q.seat) : '') + (q.boost ? ' ⬆' : '') + (q.alive ? buffsOf(q.seat).map(function (k) { return buffMini(k); }).join('') : '') + '</div>';
+  };
+  var h;
+  if (S.mode === 'team') {   // 第 19 版：名牌分兩隊
+    var mt = myP() ? myP().team : 0;
+    h = [mt, 1 - mt].map(function (t) { return '<div class="grp"><span class="gl">' + (t === 0 ? '甲隊' : '乙隊') + (t === mt && myP() ? '（我方）' : '') + '</span>' + S.players.filter(function (q) { return q.team === t; }).map(function (q) { return chip(q).replace('<div class="nm">', '<div class="nm">' + (q.seat !== o && E.ally(S, q.seat, o) ? '🤝' : '')); }).join('') + '</div>'; }).join('<div class="vs">VS</div>');
+  } else h = S.players.map(chip).join('');
+  if ($('chips').innerHTML !== h) $('chips').innerHTML = h;
+}
+// ---------- 第 8 版：遺蹟 buff 圖示 ----------
+function buffsOf(o) { var a = []; S.tiles.forEach(function (T) { if (T.o === o && T.t === 'r' && T.bf) a.push(T.bf); }); return a; }
+function buffMini(k) { var B = E.BUFFS[k]; return '<span class="bm" title="' + B.n + '">' + B.ic + '<i class="' + (B.up ? 'up' : 'dn') + '">' + (B.up ? '▲' : '▼') + '</i></span>'; }
+function buffBig(k) { var B = E.BUFFS[k]; return '<span class="bb">' + B.ic + '<i class="' + (B.up ? 'up' : 'dn') + '">' + (B.up ? '▲' : '▼') + '</i></span>'; }
+var buffMode = null;   // {i: 遺蹟格子, change: true/false}
+function openBuff(i, change) { buffMode = { i: i, change: !!change }; renderBuff(); }
+function closeBuff() { buffMode = null; $('buffPick').classList.add('hidden'); }
+function renderBuff() {
+  if (!S || !buffMode) return;
+  var T = S.tiles[buffMode.i], o = mySeat();
+  if (!T || T.o !== o || T.t !== 'r' || S.phase === 'end' || (!buffMode.change && !T.bo)) { closeBuff(); return; }
+  var held = E.heldBuffs(S, o, buffMode.i);   // 其他遺蹟已經拿到的不能再選
+  var keys = (buffMode.change ? E.BUFF_KEYS.filter(function (k) { return k !== T.bf; }) : T.bo).filter(function (k) { return held.indexOf(k) < 0; });
+  var C = E.COST.buff, p = myP(), cd = Math.max(0, Math.ceil((T.bc || 0) - dispTime()));
+  var poor = buffMode.change && (p.food < C.food || p.iron < C.iron);
+  var title = buffMode.change ? '更換遺蹟 buff（🌾' + C.food + ' ⛏' + C.iron + '）' : '🏛 佔領遺蹟！選一個 buff';
+  if (held.length) title += '<div class="note" style="font-size:13px;letter-spacing:0">已經有：' + held.map(function (k) { return buffMini(k) + E.BUFFS[k].n; }).join('、') + '（不能重複）</div>';
+  var sub = buffMode.change ? (cd ? '還要等 ' + cd + ' 秒才能再換' : poor ? '資源不夠' : '遺蹟被搶走，buff 就會消失') : '剩 ' + Math.max(0, Math.ceil(T.bd - dispTime())) + ' 秒，沒選會自動拿第一個（' + E.BUFFS[keys[0]].n + '）';
+  var h = '<div class="code" style="font-size:22px;letter-spacing:1px">' + title + '</div><div class="note" style="text-align:center">' + sub + '</div><div class="bgrid">' +
+    keys.map(function (k) { var B = E.BUFFS[k]; return '<button class="bcard" data-k="' + k + '"' + (buffMode.change && (cd || poor) ? ' disabled' : '') + '>' + buffBig(k) + '<b>' + B.n + '</b><small>' + B.d + '</small></button>'; }).join('') + '</div>' +
+    (buffMode.change ? '<button class="btn" id="buffCancel">取消</button>' : '');
+  if ($('buffCard').innerHTML !== h) $('buffCard').innerHTML = h;
+  $('buffPick').classList.remove('hidden');
+}
+$('buffCard').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b || b.disabled || !buffMode) return;
+  if (b.id === 'buffCancel') { closeBuff(); return; }
+  var k = b.getAttribute('data-k'); if (!k) return;
+  var err = send({ t: 'buff', i: buffMode.i, k: k });
+  if (!err) closeBuff();
+});
+var buffSeen = {};   // 同一次佔領只自動跳一次
+function checkBuffPopup() {
+  if (!S || buffMode) { renderBuff(); return; }
+  var o = mySeat();
+  S.tiles.forEach(function (T, i) {
+    if (buffMode || T.o !== o || !T.bo) return;
+    var key = i + ':' + T.bd;
+    if (buffSeen[key]) return;
+    buffSeen[key] = 1; openBuff(i, false);
+  });
+}
+function clock(s) { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+setInterval(function () { if (S && !$('game').classList.contains('hidden')) { renderTop(); renderPanel(); } }, 250);
+
+function btn(a, label, sub, ok, extra) {
+  var dot = extra && extra.indexOf('data-dot') >= 0 ? '<span class="dot"></span>' : '';
+  return '<button class="ab' + (a === 'aim' ? ' go' : '') + '" data-a="' + a + '"' + (extra || '') + (ok ? '' : ' disabled') + '>' + dot + label + (sub ? '<small>' + sub + '</small>' : '') + '</button>';
+}
+function renderPanel(force) {
+  var h = panelBody();
+  if (panelMsg && Date.now() - panelMsgAt < 3500) h = '<div class="warnline" style="margin-bottom:4px">⚠ ' + esc(panelMsg) + '</div>' + h;
+  var mini = !S || $('game').classList.contains('hidden');   // 第 14 版：出兵選目標時面板不縮，地圖不會跳
+  $('panel').classList.toggle('mini', mini);
+  if (force || h !== panelHtml) {
+    panelHtml = h; $('panel').innerHTML = h;
+    setPh();
+  }
+}
+var SICO = {};
+function sentryIco(T) {   // 第 18 版：面板文字裡的哨塔小圖＝地圖上同一張圖（等級＋主人顏色）
+  var o = T.o >= 0 ? T.o : 0, k = T.sl + '_' + o;
+  if (!SICO[k]) SICO[k] = (T.sl === 3 ? IMG.t3[o] : T.sl === 2 ? IMG.t2c[o] : IMG.t1c[o]).toDataURL();
+  return '<img class="sico" src="' + SICO[k] + '">';
+}
+function panelBody() {
+  if (!S) return '';
+  var p = myP(), o = mySeat();
+  if (!p) return '<div class="hint">觀戰中</div>';
+  if (S.phase === 'end') return '<div class="hint">遊戲結束。<button class="ab" onclick="showEnd()">看排名</button></div>';
+  if (!p.alive) return '<div class="hint">💀 你的主城被攻下了，可以繼續觀戰。</div>';
+  if (aim && sel >= 0) return aimPanel(p, o);
+  if (sel < 0) {
+    var tip = S.phase === 'prep' ? '準備期：先在主城 🏯 招兵、升城牆或哨塔。30 秒後開戰才能出兵。' : '點自己的地出兵、招兵、升級；點別人或無主的地，可以從附近好幾塊地一起湊兵攻打。';
+    return '<div class="hd"><span class="sw" style="background:' + SEAT[o] + '"></span>你是' + SEATN[o] + '色・' + esc(p.name) + '</div><div class="hint">' + tip + '</div>';
+  }
+  var T = S.tiles[sel], I = E.INFO[T.t], own = T.o === o, C = E.COST, pr = E.prod(T);
+  var isAlly = E.ally(S, T.o, o), owner = T.o < 0 ? '無主' : (own ? '你的' : (isAlly ? '🤝 ' : '') + esc(S.players[T.o].name) + '的');
+  var head = '<div class="hd"><span class="sw" style="background:' + (T.o < 0 ? '#888' : SEAT[T.o]) + '"></span>' + owner + (T.lv ? 'Lv' + T.lv + ' ' : '') + I.n + (E.isCapital(S, sel) ? '（主城）' : '') +
+    ((pr[0] || pr[1]) ? '<span style="font-weight:600;color:var(--sub);font-size:13px">・' + (pr[0] ? '🌾' + pr[0] : '') + (pr[1] ? ' ⛏' + pr[1] : '') + '/秒</span>' : '') + '</div>';
+  var info = [];
+  if (T.sl) info.push(sentryIco(T) + SENTRY_NAME[T.sl] + ' ' + Math.ceil(T.sh) + '/' + E.sentryMax(S, T, sel) + '（約擋 ' + E.SENTRY[T.sl].stop + ' 人' + (T.sl >= 3 && T.t !== 'e' ? '，可募兵' : '') + '）');
+  if (T.w) info.push('🧱城牆 Lv' + T.w);
+  info.push('駐軍 <b>' + T.q.length + '</b> 隊 <b>' + E.menOf(T.q) + '</b> 人');
+  if (T.al) T.al.forEach(function (g) { info.push('<span style="color:' + SEAT[g.o] + '">■</span>' + (g.o === o ? '你的' : esc(S.players[g.o].name) + '的') + '援軍 ' + g.q.length + ' 隊 ' + E.menOf(g.q) + ' 人'); });
+  var okN = own && E.canRecruit(S, sel, o), okE = own && T.t === 'e';
+  if (okN || okE) info.push('<button class="tg' + (T.ar ? ' on' : '') + '" data-a="auto" data-k="ar">自動招兵 ' + (T.ar ? '開' : '關') + '</button><button class="tg' + (T.af ? ' on' : '') + '" data-a="auto" data-k="af">自動補兵 ' + (T.af ? '開' : '關') + '</button>');
+  var gar = '<div class="gar">' + info.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
+  var warn = '';
+  if (T.s) warn += '<div class="warnline">⚔ 攻城中：' + T.s.map(function (s) { return esc(S.players[s.o].name) + ' ' + s.q.length + ' 隊 ' + E.menOf(s.q) + ' 人'; }).join('、') + '</div>';
+  if (T.t === 'w' && T.o < 0) warn += '<div class="hint">👹 野怪駐守。打下來變成 ⭐精兵營，送一隊精兵（血 ×1.5、攻擊 ×1.2），之後只有這裡能招精兵</div>';
+  if (T.t === 'e' && own) warn += '<div class="hint">⭐ 精兵營：只能招精兵、補精兵</div>';
+  if (T.t === 'r') {
+    if (!own) warn += '<div class="hint">🏛 遺蹟：佔下就是箭樓（可募兵）、隊伍上限 +' + E.RUIN_CAP + '、給佔領者一個 buff</div>';
+    if (T.bf) warn += '<div class="gar"><span>目前 buff：' + buffMini(T.bf) + ' <b>' + E.BUFFS[T.bf].n + '</b>（' + E.BUFFS[T.bf].d + '）</span></div>';
+  }
+  if (isAlly) return head + gar + warn + allyPanel(p, o, T);
+  if (!own) return head + gar + warn + (T.t !== 'x' ? attackPanel(p, o, T) : '');
+  var play = S.phase === 'play', h = head + gar + warn;
+  var nsq = E.squadsOf(S, o), ncap = E.squadCap(S, o);
+  if (nsq > ncap && (okN || okE)) h += '<div class="warnline" style="font-size:13px">隊伍超過上限（' + nsq + '/' + ncap + '），佔更多地才能再招兵</div>';
+  // 隊伍＋快選＋出兵
+  if (!T.q.length) h += '<div class="hint">這格沒有駐軍。' + (T.tr ? '⏳ 訓練中 ' + T.tr.length + ' 隊（下一隊還要 ' + Math.max(0, Math.ceil(T.tr[0].d - dispTime())) + ' 秒）' : '') + '</div>';
+  else {
+    var pk2 = picked(), hasE = T.q.some(function (q) { return q.e; }), sameAs = function (list) { return list.length === pk2.length && list.every(function (q) { return pickOn[q.i]; }); };
+    var qk = [['half', '一半', T.q.slice(0, Math.max(1, Math.ceil(T.q.length / 2)))], ['all', '全部', T.q]];
+    if (hasE) qk.push(['e', '⭐精兵', T.q.filter(function (q) { return q.e; })]);
+    h += '<div class="qks">' + qk.map(function (c) { return '<button class="qk' + (pk2.length && sameAs(c[2]) ? ' on' : '') + '" data-a="quick" data-k="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>';
+    h += '<div class="sqs' + (T.q.length > 5 ? ' c5' : '') + '">' + T.q.map(function (q, k) {
+      return '<button class="sq' + (pickOn[q.i] ? ' on' : '') + (q.e ? ' el' : '') + '" data-a="sq" data-id="' + q.i + '"><span class="ck">' + (pickOn[q.i] ? '☑' : '☐') + '</span><img class="sqm" src="' + (q.e ? MANE_URL : MAN_URL)[o] + '">' + (q.e ? '⭐精兵' : '第' + (k + 1) + '隊') + '<small>' + E.men(q) + '/' + E.SQ + ' 人</small></button>';
+    }).join('') + '</div>';
+    h += '<button class="ab go wide" data-a="aim"' + (play ? '' : ' disabled') + '>' + (!play ? '開戰後才能出兵' : pk2.length ? '⚔ 出兵（' + pk2.length + ' 隊 ' + E.menOf(pk2) + ' 人）→ 點目標' : '⚔ 連續出兵：每點一格派 1 隊') + '</button>';
+  }
+  // 招兵／補兵／升級固定在下面；鐵夠就亮紅點
+  var cm = 1 - 0.25 * E.bn(S, o, 'cost'), tm = Math.pow(0.5, E.bn(S, o, 'train')), acts = [];
+  var slots = T.q.length + (T.tr ? T.tr.length : 0), capFull = E.squadsOf(S, o) >= E.squadCap(S, o), why = capFull ? (E.squadsOf(S, o) > E.squadCap(S, o) ? '超過上限' : '隊伍已滿') : slots >= E.tileCap(S, sel) ? '這格已滿' : '';
+  if (okE) { var ef = Math.round(C.recE.food * cm), ei = Math.round(C.recE.iron * cm); acts.push(btn('rec', '⭐招精兵', why || '🌾' + ef + ' ⛏' + ei, p.food >= ef && p.iron >= ei && !why, ' data-e="1"')); }
+  else if (okN) { var rf = Math.round(C.rec * cm); acts.push(btn('rec', '招兵', why || '🌾' + rf + '・' + Math.round(E.TRAIN * tm * 10) / 10 + '秒', p.food >= rf && !why)); }
+  else acts.push(btn('none', '招兵', '箭樓才能招', false));
+  var miss = 0, fcost = 0;
+  T.q.forEach(function (q) { var m0 = E.SQ - E.men(q); if (q.e ? okE : okN) { miss += m0; fcost += m0 * (q.e ? C.fillE : C.fill) * cm; } });
+  var notFull = T.q.some(function (q) { return E.men(q) < E.SQ; });
+  acts.push(btn('fill', '補兵', (okN || okE) ? (miss ? '🌾' + Math.ceil(fcost) : notFull ? (okE ? '一般兵不能在這補' : '精兵回精兵營補') : '都是滿的') : '這裡不能補', miss > 0 && !T.s && p.food >= C.fill * cm));
+  if (T.sl && T.sl < 3) { var sc = C.sentry[T.sl + 1], sok = p.iron >= sc; acts.push(btn('sup', '升' + SENTRY_NAME[T.sl + 1], '⛏' + sc + (T.sl + 1 === 3 && T.t !== 'e' ? '・可募兵' : ''), sok, sok ? ' data-dot="1"' : '')); }
+  else acts.push(btn('none', SENTRY_NAME[3] || '哨塔', '最高級', false));
+  if (T.w < 3) { var wc = C.wall[T.w], wok = p.iron >= wc; acts.push(btn('wall', '城牆 Lv' + (T.w + 1), '⛏' + wc, wok, wok ? ' data-dot="1"' : '')); }
+  else acts.push(btn('none', '城牆 Lv3', '最高級', false));
+  if (T.t === 'r' && T.bo) acts.push(btn('buffpick', '🏛 選 buff', '', true));
+  else if (T.t === 'r') { var cdl = Math.max(0, Math.ceil((T.bc || 0) - dispTime())); acts.push(btn('buffchg', '換 buff', cdl ? '冷卻 ' + cdl + ' 秒' : '🌾' + C.buff.food + ' ⛏' + C.buff.iron, !cdl && p.food >= C.buff.food && p.iron >= C.buff.iron)); }
+  h += '<div class="acts acts4">' + acts.join('') + '</div>';
+  return h;
+}
+function aimPanel(p, o) {
+  var T = S.tiles[sel], pk = picked(), mq = myQ(sel), left = mq.length;
+  var each = aimEach ? '每點一格派 <b>' + aimEach + ' 隊</b>' : '派勾選的 <b>' + pk.length + ' 隊 ' + E.menOf(pk) + ' 人</b>';
+  var ch = [[0, '勾選的 ' + pk.length + ' 隊', !pk.length], [1, '每次 1 隊', false], [2, '每次 2 隊', left < 2]];
+  return '<div class="hd">🚩 ' + (aimEach ? '連續出兵中' : '出兵') + '：' + each + '</div>' +
+    '<div class="qks">' + ch.map(function (c) { return '<button class="qk' + (aimEach === c[0] ? ' on' : '') + '" data-a="each" data-k="' + c[0] + '"' + (c[2] ? ' disabled' : '') + '>' + c[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="hint" style="margin:4px 0 8px">在地圖上點 <b>白色虛線框</b> 的格子當目標' + (aimEach ? '，可以連續點好幾格' : '') + '。這格還有 ' + left + ' 隊 ' + E.menOf(mq) + ' 人。</div>' +
+    '<button class="ab wide" data-a="cancel">' + (aimEach ? '完成' : '取消出兵') + '</button>';
+}
+// 第 17 版：點別人或無主的地 → 估算要多少兵、從附近好幾塊地一起湊兵
+function estNeed(i) {
+  var T = S.tiles[i], o = mySeat(), key = [i, T.o, T.t, T.lv, T.sl, Math.round(T.sh), T.w, E.hpOf(E.defQ(T)), E.defQ(T).length].join(',');
+  if (estCache[key] !== undefined) return estCache[key];
+  function win(n) {
+    var S2 = JSON.parse(JSON.stringify(S)), T2 = S2.tiles[i], q = [], m = n, t = 0;
+    while (m > 0) { var k = Math.min(E.SQ, m); q.push({ i: 900000 + q.length, h: k * E.HPU }); m -= k; }
+    T2.s = [{ o: o, q: q, t0: S2.time }];
+    while (T2.s && t < 900) { E.siegeTick(S2, i, 0.2); t += 0.2; }
+    return T2.o === o;
+  }
+  var lo = 1, hi = 200;
+  if (!win(hi)) { estCache = {}; estCache[key] = -1; return -1; }
+  while (lo < hi) { var mid = (lo + hi) >> 1; if (win(mid)) hi = mid; else lo = mid + 1; }
+  if (Object.keys(estCache).length > 30) estCache = {};
+  estCache[key] = lo; return lo;
+}
+function allyPanel(p, o, T) {   // 第 19 版：點隊友的地＝帶走援軍、派援軍、送資源
+  var h = '', mq = myQ(sel), pk = picked(), play = S.phase === 'play';
+  if (mq.length) {
+    h += '<div class="lab2">你在這裡的援軍（算在你的隊伍上限）</div><div class="sqs c5">' + mq.map(function (q, k) {
+      return '<button class="sq' + (pickOn[q.i] ? ' on' : '') + '" data-a="sq" data-id="' + q.i + '"><span class="ck">' + (pickOn[q.i] ? '☑' : '☐') + '</span><img class="sqm" src="' + (q.e ? MANE_URL : MAN_URL)[o] + '">' + (q.e ? '⭐精兵' : '援軍' + (k + 1)) + '<small>' + E.men(q) + '/' + E.SQ + ' 人</small></button>';
+    }).join('') + '</div>';
+    h += '<button class="ab wide" data-a="aim"' + (play ? '' : ' disabled') + '>' + (pk.length ? '帶走勾選的援軍（' + pk.length + ' 隊）→ 點目標' : '連續帶走：每點一格派 1 隊') + '</button>';
+  }
+  if (play) h += supportGather(o);
+  var to = S.players[T.o], cf = Math.max(0, Math.ceil((p.gf || 0) - S.time)), ci = Math.max(0, Math.ceil((p.gi || 0) - S.time)), G = E.GIFT;
+  h += '<div class="acts" style="grid-template-columns:1fr 1fr">' + btn('gift', '🎁 送 ' + G.food + ' 糧', cf ? '冷卻 ' + cf + ' 秒' : '給 ' + esc(to.name), !cf && p.food >= G.food && to.alive, ' data-k="food"') +
+    btn('gift', '🎁 送 ' + G.iron + ' 鐵', ci ? '冷卻 ' + ci + ' 秒' : '給 ' + esc(to.name), !ci && p.iron >= G.iron && to.alive, ' data-k="iron"') + '</div>';
+  return h;
+}
+function supportGather(o) {
+  var srcs = [];
+  S.tiles.forEach(function (U, k) {
+    if (U.o !== o || !U.q.length || U.s || k === sel) return;
+    var tg = E.targets(S, o, k); if (tg[sel] === undefined) return;
+    srcs.push({ k: k, d: tg[sel] });
+  });
+  srcs.sort(function (a, b) { return a.d - b.d; });
+  var st = E.STEP / (1 + 0.3 * E.bn(S, o, 'spd')), chosen = 0;
+  Object.keys(gather).forEach(function (k) { chosen += E.menOf(myQ(+k).slice(0, gather[k])); });
+  var h = '<div class="lab2">派兵支援（從附近湊兵）</div>';
+  if (!srcs.length) return h + '<div class="hint">附近沒有可以派的兵。</div>';
+  h += '<div class="srcs">' + srcs.slice(0, 4).map(function (x) {
+    var U = S.tiles[x.k], g = gather[x.k] || 0;
+    return '<div class="src' + (g ? ' on' : '') + '"><div class="nm">' + (E.isCapital(S, x.k) ? '🏯 主城' : E.tname(S, x.k)) + '<small>' + U.q.length + ' 隊 ' + E.menOf(U.q) + ' 人・走約 ' + Math.round(x.d * st) + ' 秒' + (g ? '・<b>已選 ' + g + ' 隊</b>' : '') + '</small></div>' +
+      '<button class="mini g" data-a="gadd" data-s="' + x.k + '">+1 隊</button><button class="mini" data-a="gall" data-s="' + x.k + '">' + (g === U.q.length ? '清除' : '全部') + '</button></div>';
+  }).join('') + '</div>';
+  return h + '<button class="ab go wide" data-a="gogo"' + (chosen ? '' : ' disabled') + '>🛡 派去支援（' + chosen + ' 人）</button>';
+}
+function attackPanel(p, o, T) {
+  if (S.phase !== 'play') return '<div class="hint">開戰後可以從這裡湊兵攻打。</div>';
+  var need = estNeed(sel), srcs = [];
+  S.tiles.forEach(function (U, k) {
+    if (U.o !== o || !U.q.length || U.s) return;
+    var tg = E.targets(S, o, k); if (tg[sel] === undefined) return;
+    srcs.push({ k: k, d: tg[sel] });
+  });
+  srcs.sort(function (a, b) { return a.d - b.d; });
+  var st = E.STEP / (1 + 0.3 * E.bn(S, o, 'spd')), chosen = 0;
+  Object.keys(gather).forEach(function (k) { chosen += E.menOf(S.tiles[k].q.slice(0, gather[k])); });
+  var dinfo = [];
+  if (T.sl) dinfo.push(sentryIco(T) + Math.ceil(T.sh));
+  dinfo.push('駐軍 ' + E.menOf(E.defQ(T)) + ' 人');
+  if (T.w) dinfo.push('🧱Lv' + T.w);
+  var pct = need > 0 ? Math.min(100, Math.round(chosen / need * 100)) : 0;
+  var h = '<div class="needbox">守方：' + dinfo.join('＋') + '　<b class="gold">' + (need > 0 ? '建議至少 ' + need + ' 人' : '要非常多兵') + '</b>' +
+    '<div class="bar"><i style="width:' + pct + '%;background:' + (chosen >= need && need > 0 ? '#7fd16b' : '#f4c95d') + '"></i></div>' +
+    '<small>' + (chosen ? '已選 ' + chosen + ' 人' + (need > 0 ? (chosen >= need ? '，夠了' : '，還差 ' + (need - chosen) + ' 人') : '') : '從下面挑兵（估算不含之後趕來的援兵）') + '</small></div>';
+  if (!srcs.length) return h + '<div class="hint">附近沒有可以派的兵（要從相鄰的自己的地出發）。</div>';
+  h += '<div class="srcs">' + srcs.slice(0, 6).map(function (x) {
+    var U = S.tiles[x.k], g = gather[x.k] || 0;
+    return '<div class="src' + (g ? ' on' : '') + '"><div class="nm">' + (E.isCapital(S, x.k) ? '🏯 主城' : E.tname(S, x.k)) + '<small>' + U.q.length + ' 隊 ' + E.menOf(U.q) + ' 人・走約 ' + Math.round(x.d * st) + ' 秒' + (g ? '・<b>已選 ' + g + ' 隊</b>' : '') + '</small></div>' +
+      '<button class="mini g" data-a="gadd" data-s="' + x.k + '">+1 隊</button><button class="mini" data-a="gall" data-s="' + x.k + '">' + (g === U.q.length ? '清除' : '全部') + '</button></div>';
+  }).join('') + '</div>';
+  h += '<button class="ab go wide" data-a="gogo"' + (chosen ? '' : ' disabled') + '>⚔ 一起攻打（' + chosen + ' 人）</button>';
+  return h;
+}
+// 選到的格子被面板蓋住或在畫面外 → 自動捲到看得見的地方
+function ensureVisible(i) {
+  if (i < 0) return;
+  var wrap = $('mapWrap'), r = E.rc(i), x0 = r[1] * cs + 6, y0 = r[0] * cs + 6;
+  var vx = wrap.scrollLeft, vy = wrap.scrollTop, vw = wrap.clientWidth, vh = wrap.clientHeight;
+  if (x0 < vx || x0 + cs > vx + vw || y0 < vy || y0 + cs > vy + vh) centerOn(i);
+}
+
+function showEnd() {
+  if (!S || !S.end) return;
+  var o = mySeat(), rank = S.end.rank, myRank = rank.indexOf(o);
+  if (S.mode === 'team') {   // 第 19 版：2v2 結算
+    var wt = S.end.wteam, mine = o >= 0 ? S.players[o].team : -1;
+    $('endTitle').textContent = '🏆 ' + (wt === 0 ? '甲隊' : '乙隊') + '獲勝';
+    $('endWhy').textContent = (mine >= 0 ? (mine === wt ? '你們贏了！' : '你們輸了') + '・' : '') + (S.end.why === 'team' ? '打下對方兩座主城，提前獲勝' : S.end.why === 'humans' ? '所有真人玩家都出局了' : '時間到，比兩人分數總和（甲隊 ' + S.end.ts[0] + '：乙隊 ' + S.end.ts[1] + '）');
+    $('endList').innerHTML = rank.map(function (s) {
+      var q = S.players[s];
+      return '<div class="rank"' + (q.team === wt ? '' : ' style="opacity:.6"') + '><span class="no">' + (q.team === 0 ? '甲' : '乙') + '</span><span style="color:' + SEAT[s] + '">■</span>' + esc(q.name) +
+        '<span class="sc">' + (q.alive ? q.score + ' 分' : '出局（' + q.score + ' 分）') + '</span></div>';
+    }).join('');
+    $('endScr').classList.remove('hidden');
+    return;
+  }
+  $('endTitle').textContent = myRank === 0 ? '🏆 你贏了！' : (o >= 0 ? '第 ' + (myRank + 1) + ' 名' : '遊戲結束');
+  $('endWhy').textContent = { time: '時間到，依分數排名（每塊地 1 分、遺蹟 4 分）', last: '只剩一位君主，提前獲勝', ruins: '同時守住 ' + E.RUIN_WIN + ' 個遺蹟 ' + E.RUIN_HOLD + ' 秒，提前獲勝', humans: '所有真人玩家都出局了' }[S.end.why] || '';
+  $('endList').innerHTML = rank.map(function (s, k) {
+    var q = S.players[s];
+    return '<div class="rank"><span class="no">' + ['🥇', '🥈', '🥉', '4'][k] + '</span><span style="color:' + SEAT[s] + '">■</span>' + esc(q.name) +
+      '<span class="sc">' + (q.alive ? q.score + ' 分' : '出局（' + q.score + ' 分）') + '</span></div>';
+  }).join('');
+  $('endScr').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
