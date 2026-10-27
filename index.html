@@ -208,7 +208,7 @@ body.wide .res{font-size:17px}
       <button class="btn ok" id="btnJoin">加入</button>
     </div>
     <label>電腦難度（單人練習、開房補位都用這個）</label>
-    <select class="inp" id="diffSel"><option value="easy">簡單：5 秒想一次、不會優先打你</option><option value="normal">普通：3 秒想一次</option><option value="hard">困難：2.5 秒想一次、反應快、會圍攻</option></select>
+    <select class="inp" id="diffSel"><option value="easy">簡單：5 秒想一次、不會優先打你</option><option value="normal">普通：約 3.5 秒想一次</option><option value="hard">困難：約 3 秒想一次、反應快、會圍攻</option></select>
     <label>模式（單人練習、開房都用這個）</label>
     <select class="inp" id="modeSel"><option value="ffa">混戰：四人各自為戰</option><option value="adj">2v2 合作：隊友相鄰（同一邊）</option><option value="diag">2v2 合作：隊友對角</option></select>
     <button class="btn" id="btnSolo">單人練習（對 3 個機器人）</button>
@@ -327,6 +327,7 @@ var E = (function () {
   };
   var LAND_GUARD = [null, [5], [8, 8], [10, 10, 10]];
   var LAND_ODDS = [0.6, 0.3, 0.1];   // 隨機生成：Lv1 6 成、Lv2 3 成、Lv3 1 成
+  var FOG = { guess: 12, capGuess: 30, grow: 0.1, grow_max: 15 };   // 第 20 版：電腦猜看不到的駐軍（人）
   var WILD_REWARD = { food: 60, iron: 30 };
   var RUIN_WIN = 3, RUIN_HOLD = 60, RUIN_CAP = 2;   // 同時守住 3 個遺蹟 60 秒獲勝；每個遺蹟隊伍上限 +2
   var CORNERS = [[1, 1], [1, 13], [13, 13], [13, 1]];
@@ -334,8 +335,8 @@ var E = (function () {
   // human＝打真人土地的意願倍率、gang＝別人正在打的對象，意願倍率（不聯手圍攻）
   var DIFF = {
     easy: { n: '簡單', think: 5, react: 6, human: 0.3, gang: 0.3 },
-    normal: { n: '普通', think: 3, react: 3, human: 1, gang: 0.4 },
-    hard: { n: '困難', think: 2.5, react: 2, acts: 1, human: 1, gang: 0.75 }
+    normal: { n: '普通', think: 3.6, react: 3, human: 1, gang: 0.4 },   // 第 20 版：迷霧後重調
+    hard: { n: '困難', think: 3.2, react: 2, acts: 1, human: 1, gang: 0.75 }   // 第 20 版：目標人類勝率約 33%
   };   // 座位 0、2 對角
 
   function idx(r, c) { return r * N + c; }
@@ -615,6 +616,12 @@ var E = (function () {
       T.q.push({ i: S.nid++, h: SQ * E_HPU, e: 1 });
       ev(S, 'gain', '野怪投降！獲得精兵營', o);
     }
+    if (T.t === 'c') {   // 第 20 版：主城被攻下 → 隨機變成農田或礦山（機率同地圖生成）
+      var x0 = Math.random();
+      T.lv = x0 < LAND_ODDS[0] ? 1 : x0 < LAND_ODDS[0] + LAND_ODDS[1] ? 2 : 3;
+      T.t = Math.random() < 0.6 ? 'f' : 'm';
+    }
+    note(S, ti);
     if (T.t === 'r') { T.bf = null; T.bo = buffOpts(S, T.o, ti); T.bd = S.time + BUFF_PICK_SEC; T.bc = 0; }
     var wasCap = prev >= 0 && S.players[prev].cap === ti && S.players[prev].alive;
     fullHP(S, T, ti);   // 第 5 版：滿血
@@ -646,7 +653,7 @@ var E = (function () {
           T.s = T.s.filter(function (x) { return x.o !== by && !ally(S, x.o, by); });
         }
       }
-      if (T.s && !T.s.length) T.s = null;
+      if (T.s && !T.s.length) { T.s = null; if (T.o < 0) T.q = neutralQ(S, T); }
     });
     S.armies = S.armies.filter(function (a) { return a.o !== v; });
     p.rs = null;
@@ -717,6 +724,7 @@ var E = (function () {
     if (!T.s.length) {
       T.s = null;
       if (T.sl) fullHP(S, T, ti);   // 擋下進攻 → 哨塔回滿血
+      if (T.o < 0) T.q = neutralQ(S, T);   // 第 20 版：無主地沒被打下 → 小怪回到原本數量
       return;
     }
     if (!T.q.length && !alSq(T) && (!T.sl || T.sh <= 0.01)) {
@@ -793,7 +801,7 @@ var E = (function () {
     training(S);
     if (S.phase === 'play') {
       moveArmies(S);
-      for (var i = 0; i < S.tiles.length; i++) if (S.tiles[i].s) siegeTick(S, i, dt);
+      for (var i = 0; i < S.tiles.length; i++) if (S.tiles[i].s) { siegeTick(S, i, dt); if (S.tiles[i].s) note(S, i); }
       if (S.phase === 'play' && S.time >= PREP + GAME) finish(S, 'time');
     }
   }
@@ -933,8 +941,17 @@ var E = (function () {
   }
 
   // ---------- 機器人 ----------
+  // 第 20 版：戰爭迷霧。電腦只看得到自己和隊友的兵、無主地的小怪、正在打仗那幾格；
+  // 其他敵人土地上的兵，用「最後一次在戰鬥中看到的人數」估，沒看過就用猜的
+  function note(S, ti) { var T = S.tiles[ti]; if (!S.seen) S.seen = {}; if (T.o >= 0) S.seen[ti] = [Math.round(powerOf(defQ(T))), Math.round(S.time), T.o]; else delete S.seen[ti]; }
+  function visible(S, ti, o) { var T = S.tiles[ti]; return T.o < 0 || friendly(S, T.o, o) || !!T.s; }
+  function guessPow(S, ti) {
+    var T = S.tiles[ti], m = S.seen && S.seen[ti];
+    if (m && m[2] === T.o) return m[0] + Math.min(FOG.grow_max, (S.time - m[1]) * FOG.grow);
+    return isCapital(S, ti) ? FOG.capGuess : FOG.guess;
+  }
   function defMen(S, ti, o) {   // 打下這格大約要多少人
-    var T = S.tiles[ti], d = powerOf(defQ(T)) / (WALL_MUL[T.w] || 1);
+    var T = S.tiles[ti], d = (visible(S, ti, o) ? powerOf(defQ(T)) : guessPow(S, ti)) / (WALL_MUL[T.w] || 1);
     if (T.sl) d += SENTRY[T.sl].stop * Math.sqrt(Math.max(0.1, T.sh / sentryMax(S, T, ti))) * (isCapital(S, ti) ? 1.4 : 1);
     if (T.s) T.s.forEach(function (s) { if (s.o !== o) d -= menOf(s.q) * 0.3; });
     return Math.max(0, d);
@@ -953,7 +970,7 @@ var E = (function () {
     return v;
   }
   function beingHit(S, victim, me) {
-    for (var k = 0; k < S.armies.length; k++) { var a = S.armies[k]; if (a.o !== me && a.o !== victim && !S.players[a.o].human && S.tiles[a.path[a.path.length - 1]].o === victim) return true; }
+    // 第 20 版：看不到別人行軍中的兵，只看正在打仗的格子
     for (var i = 0; i < S.tiles.length; i++) {
       var T = S.tiles[i];
       if (T.o === victim && T.s) for (var j = 0; j < T.s.length; j++) if (T.s[j].o !== me && !S.players[T.s[j].o].human) return true;
@@ -1086,7 +1103,7 @@ var E = (function () {
   return {
     N: N, STEP: STEP, PREP: PREP, GAME: GAME, HPU: HPU, SQ: SQ, TILE_SQ: TILE_SQ, CAP_SQ: CAP_SQ, ally: ally, friendly: friendly, alQ: alQ, alSq: alSq, defQ: defQ, GIFT: GIFT, tileCap: tileCap, findPath: findPath, reach: reach, TRAIN: TRAIN, INFO: INFO, COST: COST, WALL_MUL: WALL_MUL, SENTRY: SENTRY,
     DIFF: DIFF, LAND: LAND, prod: prod, BUFFS: BUFFS, BUFF_KEYS: BUFF_KEYS, BUFF_CD: BUFF_CD, bn: bn, heldBuffs: heldBuffs, hpu: hpu, powerOf: powerOf, TRAIN_E: TRAIN_E, RUIN_WIN: RUIN_WIN, RUIN_HOLD: RUIN_HOLD, RUIN_CAP: RUIN_CAP, ruinsOf: ruinsOf, MIN_PLAYERS: 4, idx: idx, rc: rc, nb4: nb4, men: men, menOf: menOf, hpOf: hpOf,
-    newGame: newGame, advance: advance, step: step, act: act, botThink: botThink, P: P,
+    visible: visible, FOG: FOG, newGame: newGame, advance: advance, step: step, act: act, botThink: botThink, P: P,
     targets: targets, findPath: findPath, squadsOf: squadsOf, squadCap: squadCap, menAll: menAll, rate: rate, scoreOf: scoreOf,
     canRecruit: canRecruit, isCapital: isCapital, sentryMax: sentryMax, tname: tname, refresh: refresh, siegeTick: siegeTick
   };
@@ -1343,6 +1360,9 @@ var HELP = [
        tileBox('#93b55a', '', 'width:52px;height:52px;outline:3px dashed #fff;outline-offset:-6px') + '<span>③ 點虛線框的格子</span></div>' }; },
   function () { return { t: '哨塔幫你守地', s: '用鐵 ⛏ 升級；箭樓還能招兵',
     p: [[IMG.t1c[0], '擋 6 人'], [IMG.t2c[0], '擋 13 人'], [IMG.t3[0], '擋 19 人']].map(function (x, k) { return (k ? '<span class="ar">→</span>' : '') + '<div class="cap">' + tileBox('#d7b98a', pic(x[0], 46)) + x[1] + '</div>'; }).join('') }; },
+  function () { return { t: '看不到敵人的兵', s: '別人的駐軍、行軍都看不到；開打或兵走進你的地才會現身',
+    p: '<div style="display:flex;align-items:center;gap:12px">' + tileBox(SEAT[1], '<b style="font-size:30px;color:#fff">？</b>', 'width:60px;height:60px') + '<span class="ar">→</span>' +
+      tileBox('#3a2f23', '<b style="font-size:15px;color:#fff;line-height:1.5">⚔ 12<br>🛡 20</b>', 'width:60px;height:60px;outline:3px solid #ff6b5b') + '</div>' }; },
   function () { return { t: '越多越好的地', s: '麥穗產糧 🌾，石頭產鐵 ⛏',
     p: '<div style="display:grid;grid-template-columns:repeat(3,auto);gap:10px">' + [1, 2, 3].map(function (lv) { return tileBox('#c9a45e', pic(IMG.f[lv], 56)); }).join('') + [1, 2, 3].map(function (lv) { return tileBox('#93b55a', pic(IMG.m[lv], 56)); }).join('') +
        '<b style="color:var(--sub)">少</b><b class="ar" style="font-size:20px">→</b><b style="color:var(--gold)">多</b></div>' }; },
@@ -1660,10 +1680,17 @@ function pillTxt(x, ico, num, px, py, h, align, wmax) {   // 圖示和數字分�
   x.fillStyle = '#fff'; x.fillText(num, sx + isz + 2, py + h * 0.84);
 }
 function pill(x, col, px, py, w, h) { x.fillStyle = col; x.fillRect(px, py, w, h); x.strokeStyle = '#000'; x.lineWidth = 1; x.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1); }
+// 第 20 版：戰爭迷霧。別人（2v2 隊友除外）的駐軍和行軍看不到；正在打仗的格子雙方都看得到；出局或結束後全開
+function fogSeen(T) {
+  var o = mySeat(); if (o < 0 || S.phase === 'end' || !S.players[o].alive) return true;
+  return T.o < 0 || !!T.s || E.friendly(S, T.o, o);
+}
+function armySeen(a) { var o = mySeat(); return o < 0 || S.phase === 'end' || !S.players[o].alive || E.friendly(S, a.o, o); }
 function neutralMax(T) { return T.t === 'f' || T.t === 'm' ? [0, 5, 16, 30][T.lv] : T.t === 'w' ? 16 : T.t === 'r' ? 36 : 0; }
 function drawTroops(x, T, i, X, Y, fs, blink) {
   var n = E.menOf(T.q);
   if (T.t === 'x') return;
+  if (!fogSeen(T)) return;
   if (!T.s) {   // 平常：左邊上下擺小兵（上精兵、下一般兵）＋隊數牌，右下總人數
     if (n <= 0 && !T.al) return;
     if (T.o < 0) { x.globalAlpha = 0.6; txt(x, String(n), X + cs - 3, Y + cs - 4, '#eee', Math.max(8, Math.round(fs * 0.8))); x.globalAlpha = 1; return; }
@@ -1773,6 +1800,7 @@ function draw(now) {
   }
   // 行軍中的部隊
   S.armies.forEach(function (a) {
+    if (!armySeen(a)) return;
     var prog = Math.max(0, (t - a.t0) / (a.st || E.STEP)), k = Math.min(a.path.length - 1, Math.floor(prog)), fr = Math.min(1, prog - k);
     if (k >= a.path.length - 1) { k = a.path.length - 2; fr = 1; }
     var A = E.rc(a.path[k]), B = E.rc(a.path[k + 1]);
@@ -2010,13 +2038,16 @@ function panelBody() {
   var info = [];
   if (T.sl) info.push(sentryIco(T) + SENTRY_NAME[T.sl] + ' ' + Math.ceil(T.sh) + '/' + E.sentryMax(S, T, sel) + '（約擋 ' + E.SENTRY[T.sl].stop + ' 人' + (T.sl >= 3 && T.t !== 'e' ? '，可募兵' : '') + '）');
   if (T.w) info.push('🧱城牆 Lv' + T.w);
-  info.push('駐軍 <b>' + T.q.length + '</b> 隊 <b>' + E.menOf(T.q) + '</b> 人');
-  if (T.al) T.al.forEach(function (g) { info.push('<span style="color:' + SEAT[g.o] + '">■</span>' + (g.o === o ? '你的' : esc(S.players[g.o].name) + '的') + '援軍 ' + g.q.length + ' 隊 ' + E.menOf(g.q) + ' 人'); });
+  var seen = fogSeen(T);
+  info.push(seen ? '駐軍 <b>' + T.q.length + '</b> 隊 <b>' + E.menOf(T.q) + '</b> 人' : '駐軍 <b>？</b>（看不到，開打才知道）');
+  if (T.al && seen) T.al.forEach(function (g) { info.push('<span style="color:' + SEAT[g.o] + '">■</span>' + (g.o === o ? '你的' : esc(S.players[g.o].name) + '的') + '援軍 ' + g.q.length + ' 隊 ' + E.menOf(g.q) + ' 人'); });
   var okN = own && E.canRecruit(S, sel, o), okE = own && T.t === 'e';
   if (okN || okE) info.push('<button class="tg' + (T.ar ? ' on' : '') + '" data-a="auto" data-k="ar">自動招兵 ' + (T.ar ? '開' : '關') + '</button><button class="tg' + (T.af ? ' on' : '') + '" data-a="auto" data-k="af">自動補兵 ' + (T.af ? '開' : '關') + '</button>');
   var gar = '<div class="gar">' + info.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
   var warn = '';
   if (T.s) warn += '<div class="warnline">⚔ 攻城中：' + T.s.map(function (s) { return esc(S.players[s.o].name) + ' ' + s.q.length + ' 隊 ' + E.menOf(s.q) + ' 人'; }).join('、') + '</div>';
+  if (E.isCapital(S, sel) && !own) warn += '<div class="hint">🏯 打下主城：對方出局、土地全歸你，這格會隨機變成農田或礦山</div>';
+  if (T.o < 0 && T.t !== 'x' && T.q.length) warn += '<div class="hint">沒一口氣打下來，小怪會回到原本的數量</div>';
   if (T.t === 'w' && T.o < 0) warn += '<div class="hint">👹 野怪駐守。打下來變成 ⭐精兵營，送一隊精兵（血 ×1.5、攻擊 ×1.2），之後只有這裡能招精兵</div>';
   if (T.t === 'e' && own) warn += '<div class="hint">⭐ 精兵營：只能招精兵、補精兵</div>';
   if (T.t === 'r') {
@@ -2070,11 +2101,12 @@ function aimPanel(p, o) {
 }
 // 第 17 版：點別人或無主的地 → 估算要多少兵、從附近好幾塊地一起湊兵
 function estNeed(i) {
-  var T = S.tiles[i], o = mySeat(), key = [i, T.o, T.t, T.lv, T.sl, Math.round(T.sh), T.w, E.hpOf(E.defQ(T)), E.defQ(T).length].join(',');
+  var T = S.tiles[i], o = mySeat(), hid = !fogSeen(T), key = [i, T.o, T.t, T.lv, T.sl, Math.round(T.sh), T.w, hid ? 'h' : E.hpOf(E.defQ(T)), hid ? 0 : E.defQ(T).length].join(',');
   if (estCache[key] !== undefined) return estCache[key];
   function win(n) {
     var S2 = JSON.parse(JSON.stringify(S)), T2 = S2.tiles[i], q = [], m = n, t = 0;
     while (m > 0) { var k = Math.min(E.SQ, m); q.push({ i: 900000 + q.length, h: k * E.HPU }); m -= k; }
+    if (hid) { T2.q = []; T2.al = null; }   // 第 20 版：看不到駐軍 → 只算哨塔和城牆
     T2.s = [{ o: o, q: q, t0: S2.time }];
     while (T2.s && t < 900) { E.siegeTick(S2, i, 0.2); t += 0.2; }
     return T2.o === o;
@@ -2131,10 +2163,11 @@ function attackPanel(p, o, T) {
   Object.keys(gather).forEach(function (k) { chosen += E.menOf(S.tiles[k].q.slice(0, gather[k])); });
   var dinfo = [];
   if (T.sl) dinfo.push(sentryIco(T) + Math.ceil(T.sh));
-  dinfo.push('駐軍 ' + E.menOf(E.defQ(T)) + ' 人');
+  var seenT = fogSeen(T);
+  dinfo.push(seenT ? '駐軍 ' + E.menOf(E.defQ(T)) + ' 人' : '駐軍 ？');
   if (T.w) dinfo.push('🧱Lv' + T.w);
   var pct = need > 0 ? Math.min(100, Math.round(chosen / need * 100)) : 0;
-  var h = '<div class="needbox">守方：' + dinfo.join('＋') + '　<b class="gold">' + (need > 0 ? '建議至少 ' + need + ' 人' : '要非常多兵') + '</b>' +
+  var h = '<div class="needbox">守方：' + dinfo.join('＋') + '　<b class="gold">' + (need > 0 ? (seenT ? '建議至少 ' : '光打哨塔就要 ') + need + ' 人' + (seenT ? '' : '＋駐軍') : '要非常多兵') + '</b>' +
     '<div class="bar"><i style="width:' + pct + '%;background:' + (chosen >= need && need > 0 ? '#7fd16b' : '#f4c95d') + '"></i></div>' +
     '<small>' + (chosen ? '已選 ' + chosen + ' 人' + (need > 0 ? (chosen >= need ? '，夠了' : '，還差 ' + (need - chosen) + ' 人') : '') : '從下面挑兵（估算不含之後趕來的援兵）') + '</small></div>';
   if (!srcs.length) return h + '<div class="hint">附近沒有可以派的兵（要從相鄰的自己的地出發）。</div>';
