@@ -970,7 +970,8 @@ var E = (function () {
     return v;
   }
   function beingHit(S, victim, me) {
-    // 第 20 版：看不到別人行軍中的兵，只看正在打仗的格子
+    // 第 20 版：別人「去打人」的行軍看得到（調兵、救兵看不到）
+    for (var k = 0; k < S.armies.length; k++) { var a = S.armies[k]; if (a.o !== me && a.o !== victim && !S.players[a.o].human && S.tiles[a.path[a.path.length - 1]].o === victim) return true; }
     for (var i = 0; i < S.tiles.length; i++) {
       var T = S.tiles[i];
       if (T.o === victim && T.s) for (var j = 0; j < T.s.length; j++) if (T.s[j].o !== me && !S.players[T.s[j].o].human) return true;
@@ -1360,7 +1361,7 @@ var HELP = [
        tileBox('#93b55a', '', 'width:52px;height:52px;outline:3px dashed #fff;outline-offset:-6px') + '<span>③ 點虛線框的格子</span></div>' }; },
   function () { return { t: '哨塔幫你守地', s: '用鐵 ⛏ 升級；箭樓還能招兵',
     p: [[IMG.t1c[0], '擋 6 人'], [IMG.t2c[0], '擋 13 人'], [IMG.t3[0], '擋 19 人']].map(function (x, k) { return (k ? '<span class="ar">→</span>' : '') + '<div class="cap">' + tileBox('#d7b98a', pic(x[0], 46)) + x[1] + '</div>'; }).join('') }; },
-  function () { return { t: '看不到敵人的兵', s: '別人的駐軍、行軍都看不到；開打或兵走進你的地才會現身',
+  function () { return { t: '看不到敵人的兵', s: '別人的駐軍、調兵、救兵看不到；去打人的部隊從出發就看得到（虛線＋箭頭）',
     p: '<div style="display:flex;align-items:center;gap:12px">' + tileBox(SEAT[1], '<b style="font-size:30px;color:#fff">？</b>', 'width:60px;height:60px') + '<span class="ar">→</span>' +
       tileBox('#3a2f23', '<b style="font-size:15px;color:#fff;line-height:1.5">⚔ 12<br>🛡 20</b>', 'width:60px;height:60px;outline:3px solid #ff6b5b') + '</div>' }; },
   function () { return { t: '越多越好的地', s: '麥穗產糧 🌾，石頭產鐵 ⛏',
@@ -1685,7 +1686,25 @@ function fogSeen(T) {
   var o = mySeat(); if (o < 0 || S.phase === 'end' || !S.players[o].alive) return true;
   return T.o < 0 || !!T.s || E.friendly(S, T.o, o);
 }
-function armySeen(a) { var o = mySeat(); return o < 0 || S.phase === 'end' || !S.players[o].alive || E.friendly(S, a.o, o); }
+function armySeen(a) {   // 第 20 版：自己和隊友的部隊、所有「去打人／打無主地」的部隊看得到；別人的調兵、救兵看不到
+  var o = mySeat(); if (o < 0 || S.phase === 'end' || !S.players[o].alive || E.friendly(S, a.o, o)) return true;
+  return !E.friendly(S, S.tiles[a.path[a.path.length - 1]].o, a.o);
+}
+function drawRoute(x, a, cx, cy, k) {   // 從部隊目前位置沿實際路線畫虛線，終點箭頭＋目標虛線框
+  var pts = [[cx, cy]];
+  for (var j = k + 1; j < a.path.length; j++) { var P = E.rc(a.path[j]); pts.push([(P[1] + 0.5) * cs, (P[0] + 0.5) * cs]); }
+  var L = pts.length; if (L < 2) return;
+  var e = pts[L - 1], p = pts[L - 2], ang = Math.atan2(e[1] - p[1], e[0] - p[0]), hw = cs * 0.2;
+  var ex = e[0] - Math.cos(ang) * cs * 0.3, ey = e[1] - Math.sin(ang) * cs * 0.3;
+  function poly() { x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); for (var m = 1; m < L - 1; m++) x.lineTo(pts[m][0], pts[m][1]); x.lineTo(ex, ey); }
+  x.save(); x.lineCap = 'round'; x.lineJoin = 'round'; x.setLineDash([cs * 0.16, cs * 0.12]);
+  x.strokeStyle = 'rgba(0,0,0,.7)'; x.lineWidth = Math.max(5, cs * 0.12); poly(); x.stroke();
+  x.strokeStyle = SEAT[a.o]; x.lineWidth = Math.max(3, cs * 0.07); poly(); x.stroke(); x.setLineDash([]);
+  x.beginPath(); x.moveTo(ex + Math.cos(ang) * hw * 1.2, ey + Math.sin(ang) * hw * 1.2); x.lineTo(ex + Math.cos(ang + 2.3) * hw, ey + Math.sin(ang + 2.3) * hw); x.lineTo(ex + Math.cos(ang - 2.3) * hw, ey + Math.sin(ang - 2.3) * hw); x.closePath();
+  x.fillStyle = SEAT[a.o]; x.fill(); x.lineWidth = 2; x.strokeStyle = '#000'; x.stroke();
+  var D = E.rc(a.path[a.path.length - 1]); x.strokeStyle = SEAT[a.o]; x.lineWidth = 3; x.setLineDash([4, 3]); x.strokeRect(D[1] * cs + 3, D[0] * cs + 3, cs - 6, cs - 6); x.setLineDash([]);
+  x.restore();
+}
 function neutralMax(T) { return T.t === 'f' || T.t === 'm' ? [0, 5, 16, 30][T.lv] : T.t === 'w' ? 16 : T.t === 'r' ? 36 : 0; }
 function drawTroops(x, T, i, X, Y, fs, blink) {
   var n = E.menOf(T.q);
@@ -1805,6 +1824,7 @@ function draw(now) {
     if (k >= a.path.length - 1) { k = a.path.length - 2; fr = 1; }
     var A = E.rc(a.path[k]), B = E.rc(a.path[k + 1]);
     var cx = (A[1] + (B[1] - A[1]) * fr + 0.5) * cs, cy = (A[0] + (B[0] - A[0]) * fr + 0.5) * cs;
+    drawRoute(x, a, cx, cy, k);
     var w = cs * 0.42, h = cs * 0.42;
     x.fillStyle = 'rgba(0,0,0,.3)'; x.beginPath(); x.ellipse(cx, cy + h * 0.45, w * 0.45, h * 0.15, 0, 0, 7); x.fill();
     x.drawImage((a.q.some(function (q) { return q.e; }) ? IMG.manE : IMG.man)[a.o], cx - w / 2, cy - h / 2 + (Math.floor(now / 160) % 2), w, h);
